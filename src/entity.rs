@@ -1,5 +1,7 @@
 extern crate tiled;
 
+use entity_states::EntityStates;
+use collidable::Collidable;
 use piston_window::*;
 use app::{ButtonStates};
 use std::iter::*;
@@ -11,9 +13,9 @@ use self::tiled::Map;
 use snowflake::ProcessUniqueId;
 
 pub trait Entity : AsAny {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut HashMap<ProcessUniqueId, Box<Entity>>, map: &Map);
+    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map);
     fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprite: &HashMap<String, G2dTexture>);
-    fn get_position(&self) -> (f32, f32);
+    fn get_body(&self) -> Option<&Collidable>;
     fn get_id(&self) -> ProcessUniqueId;
 }
 

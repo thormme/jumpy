@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use entity_states::EntityStates;
 use piston_window::*;
 use piston::input::Key;
 use app::{ButtonStates};
@@ -44,7 +45,7 @@ impl Player {
 }
 
 impl Entity for Player {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut HashMap<ProcessUniqueId, Box<Entity>>, map: &Map) {
+    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) {
         self.body.speed.y += 0.5f32;
         let prev_pos = self.body.pos.clone();
         self.body.speed.x *= 0.8f32;
@@ -86,11 +87,11 @@ impl Entity for Player {
         self.body.handle_collisions(map, &prev_pos);
         //println!("{:?}", self.pos);
 
-        for (_, entity) in entities {
+        entities.for_each(|entity| {
             if let Some(player) = entity.as_any().downcast_ref::<Player>() {
                 println!("{:?}", player);
             }
-        }
+        });
     }
 
     fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, G2dTexture>) {
@@ -120,8 +121,8 @@ impl Entity for Player {
         );
     }
 
-    fn get_position(&self) -> (f32, f32) {
-        return (self.body.pos.x, self.body.pos.y);
+    fn get_body(&self) -> Option<&Collidable> {
+        return Some(&self.body);
     }
 
     fn get_id(&self) -> ProcessUniqueId {

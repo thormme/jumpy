@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use entity_states::EntityStates;
 use piston_window::*;
 use piston::input::Key;
 use app::{ButtonStates};
@@ -36,7 +37,7 @@ impl Ball {
 }
 
 impl Entity for Ball {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut HashMap<ProcessUniqueId, Box<Entity>>, map: &Map) {
+    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) {
         self.body.speed.y += 0.1f32;
         let prev_pos = self.body.pos.clone();
         self.body.pos += self.body.speed;
@@ -46,6 +47,16 @@ impl Entity for Ball {
         let prev_speed = self.body.speed;
         self.body.handle_collisions(map, &prev_pos);
         self.body.speed -= prev_speed - self.body.speed;
+
+
+        self.sprite = "enemy".to_owned();
+        entities.for_zone(self.body.pos, 1, |entity| {
+            if let Some(player) = entity.as_any().downcast_ref::<Player>() {
+                if let &Some(body) = &player.get_body() {
+                    self.sprite = "player".to_owned();
+                }
+            }
+        });
     }
     fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, G2dTexture>) {
         let src_rect = [
@@ -68,8 +79,8 @@ impl Entity for Ball {
         );
     }
 
-    fn get_position(&self) -> (f32, f32) {
-        return (self.body.pos.x, self.body.pos.y);
+    fn get_body(&self) -> Option<&Collidable> {
+        return Some(&self.body);
     }
 
     fn get_id(&self) -> ProcessUniqueId {

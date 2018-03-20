@@ -3,6 +3,7 @@ extern crate opengl_graphics;
 extern crate piston_window;
 extern crate snowflake;
 extern crate evmap;
+extern crate nalgebra;
 use piston_window::*;
 use app::App;
 
@@ -12,6 +13,7 @@ mod enemy;
 mod entity;
 mod collidable;
 mod ball;
+mod entity_states;
 
 extern crate sdl2_window;
 

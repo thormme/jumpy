@@ -1,5 +1,7 @@
 extern crate tiled;
 
+use entity_states::EntityStates;
+use collidable::Collidable;
 use piston_window::*;
 use piston::input::Key;
 use app::{ButtonStates};
@@ -34,14 +36,15 @@ impl Enemy {
 }
 
 impl Entity for Enemy {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut HashMap<ProcessUniqueId, Box<Entity>>, map: &Map) {
+    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) {
         if let Some(player_opt) = entities.get(&self.player_id) {
             if let Some(player) = player_opt.as_any().downcast_ref::<Player>() {
-                let (x, y) = player.get_position();
-
-                let direction = (y-self.y).atan2(x-self.x);
-                self.x += direction.cos()*10f32 * args.dt as f32;
-                self.y += direction.sin()*10f32 * args.dt as f32;
+                if let &Some(body) = &player.get_body() {
+                    let pos = body.pos;
+                    let direction = (pos.y-self.y).atan2(pos.x-self.x);
+                    self.x += direction.cos()*10f32 * args.dt as f32;
+                    self.y += direction.sin()*10f32 * args.dt as f32;
+                }
             }
         }
     }
@@ -66,8 +69,8 @@ impl Entity for Enemy {
         );
     }
 
-    fn get_position(&self) -> (f32, f32) {
-        return (self.x, self.y);
+    fn get_body(&self) -> Option<&Collidable> {
+        return None;
     }
 
     fn get_id(&self) -> ProcessUniqueId {

@@ -4,6 +4,7 @@ extern crate graphics;
 extern crate std;
 extern crate snowflake;
 extern crate evmap;
+use entity_states::EntityStates;
 use sdl2_window::Sdl2Window;
 use std::fs::File;
 use std::vec::Vec;
@@ -43,7 +44,7 @@ pub struct App {
     map: self::tiled::Map,
     tilesheet: G2dTexture,
     image: Image,
-    entities: HashMap<ProcessUniqueId, Box<Entity>>,
+    entities: EntityStates,
     keys: HashMap<Button, bool>,
     sprites: HashMap<String, G2dTexture>
 }
@@ -84,15 +85,13 @@ impl App {
             ).unwrap();
             let image = Image::new();
 
-            let entities = HashMap::new();
-
             // Create a new game and run it.
             let mut app = App {
                 window: window,
                 map: map,
                 tilesheet: tilesheet,
                 image: image,
-                entities: entities,
+                entities: EntityStates::new(),
                 keys: HashMap::new(),
                 sprites: HashMap::new()
             };
@@ -169,9 +168,9 @@ impl App {
                 }
             }
 
-            for (_, entity) in entities {
+            entities.for_each(|entity| {
                 entity.draw(&event, args, &image, &context, gl, &sprites);
-            }
+            });
         });
     }
 
