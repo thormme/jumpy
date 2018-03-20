@@ -16,11 +16,39 @@ use self::nalgebra::{Vector2, Point2, Similarity2};
 pub struct Collidable {
     pub pos: Point2<f32>,
     pub speed: Vector2<f32>,
+    pub points: Vec<Point2<f32>>,
+    pub bounding_box: (Point2<f32>, Point2<f32>),
     pub grounded: bool,
 }
 
 impl Collidable {
-    fn correct_collision(&mut self, walls: &Vec<(Point2<f32>, Point2<f32>)>, transform: &Similarity2<f32>, point: &Point2<f32>, movement: &Vector2<f32>) -> Option<(Point2<f32>, f32)> {
+    pub fn new(pos: Point2<f32>, speed: Vector2<f32>, points: Vec<Point2<f32>>) -> Collidable {
+        let mut small_point = points[0];
+        let mut large_point = points[0];
+        for point in &points {
+            if point.x < small_point.x {
+                small_point.x = point.x;
+            }
+            if point.y < small_point.y {
+                small_point.y = point.y;
+            }
+            if point.x > large_point.x {
+                large_point.x = point.x;
+            }
+            if point.y > large_point.y {
+                large_point.y = point.y;
+            }
+        }
+        Collidable {
+            pos: pos,
+            speed: speed,
+            points: points,
+            bounding_box: (small_point, large_point),
+            grounded: false,
+        }
+    }
+
+    fn correct_collision(pos: &Point2<f32>, walls: &Vec<(Point2<f32>, Point2<f32>)>, transform: &Similarity2<f32>, point: &Point2<f32>, movement: &Vector2<f32>) -> Option<(Point2<f32>, f32)> {
         let mut smallest_u = 2f32;
         let mut smallest_pos = Point2::new(0f32, 0f32);
         for vector in walls {
@@ -34,8 +62,7 @@ impl Collidable {
             if t >= 0f32 && t <= 1f32 && u >= 0f32 && u <= 1f32 && u < smallest_u {
                 smallest_u = u;
                 let change_vec = s - r.normalize() * s.dot(&r.normalize());
-                smallest_pos = self.pos - (change_vec * (1f32 - u)) - change_vec.normalize() * 0.0001234f32;
-                //println!("{:?} {:?} {:?}", q, s, u);
+                smallest_pos = pos - (change_vec * (1f32 - u)) - change_vec.normalize() * 0.0001234f32;
             }
         }
         if smallest_u <= 1f32 {
@@ -45,13 +72,13 @@ impl Collidable {
         return None;
     }
 
-    pub fn handle_collisions(&mut self, points: &Vec<Point2<f32>>, map: &Map, prev_pos: &Point2<f32>) {
+    pub fn handle_collisions(&mut self, map: &Map, prev_pos: &Point2<f32>) {
         let tileset = map.get_tileset_by_gid(1).unwrap();
         let layer: &tiled::Layer = &map.layers[0];
         let tile_width = tileset.tile_width;
         let tile_height = tileset.tile_height;
-        let (small_x, large_x) = if self.pos.x < prev_pos.x { (self.pos.x - 1f32, prev_pos.x + 33f32) } else { (prev_pos.x - 1f32, self.pos.x + 33f32) };
-        let (small_y, large_y) = if self.pos.y < prev_pos.y { (self.pos.y - 1f32, prev_pos.y + 33f32) } else { (prev_pos.y - 1f32, self.pos.y + 33f32) };
+        let (small_x, large_x) = if self.pos.x < prev_pos.x { (self.pos.x + self.bounding_box.0.x - 1f32, prev_pos.x + self.bounding_box.1.x + 1f32) } else { (prev_pos.x + self.bounding_box.0.x - 1f32, self.pos.x + self.bounding_box.1.x + 1f32) };
+        let (small_y, large_y) = if self.pos.y < prev_pos.y { (self.pos.y + self.bounding_box.0.y - 1f32, prev_pos.y + self.bounding_box.1.y + 1f32) } else { (prev_pos.y + self.bounding_box.0.y - 1f32, self.pos.y + self.bounding_box.1.y + 1f32) };
         let tile_x = (small_x as u32 / tile_width) as usize;
         let tile_y = (small_y as u32 / tile_height) as usize;
         let tile_x2 = (large_x / tile_width as f32) as usize;
@@ -94,9 +121,9 @@ impl Collidable {
         for _i in 0..9 {
             let start_pos = self.pos;
             let mut min_pos = (self.pos, 2f32);
-            for point in points {
+            for point in &self.points {
                 let mut pos = self.pos;
-                if let Some(new_pos) = self.correct_collision(&walls, &translate, &(point + (prev_pos - Point2::new(0f32, 0f32))), &(pos - prev_pos)) {
+                if let Some(new_pos) = Collidable::correct_collision(&pos, &walls, &translate, &(point + (prev_pos - Point2::new(0f32, 0f32))), &(pos - prev_pos)) {
                     if new_pos.1 < min_pos.1 {
                         min_pos = new_pos;
                     }

@@ -319,10 +319,10 @@
    <property name="prop2" value="some text"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzt2EEKgkAYhuFZlbSUstbVMTyB9z+QI7gQockpfpjF88AHorh6QcshlT3zXrtd8m4fxn+GH+65Jj2i6NGW2h5j0iNSbY8p6RGp1OOU163H4+a8HnG6wrXlt9V7PZ425/WIc/R51a/z/oh1pEe/mfdHrNoey/SIc887V+6R9Iiy/xZy5JtIacTwTGqLHm3Roy16tGX5b64HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADfzMBxD4U=
+   eJzt2MEKgkAYhdFZVbSUstbV3vd/O2fAQMRsLH6YxTlwIYQ2fTCafdr2yHsuds67fhj/6X/4ziXpEUWPtujRlr09hqRHpK0eh7zTynU94qz93m/l2eo1fR5m1/WIU3teddMKPeLU9Ohmc/+ItbdHmR5xbnnHnbsnPaIs34XUvBPZGjGcSW3Roy16tEWPtpT/5noAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPDNCA4/DoA=
   </data>
  </layer>
- <objectgroup name="Object group">
+ <objectgroup name="Object group" visible="0">
   <object id="1" x="14" y="9" width="285" height="135"/>
   <object id="2" x="329" y="217" width="102" height="109">
    <ellipse/>

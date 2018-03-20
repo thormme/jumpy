@@ -26,11 +26,10 @@ impl Ball {
     pub fn new(x: f32, y: f32, dx: f32, dy: f32, sprite: String) -> Ball {
         Ball {
             id: ProcessUniqueId::new(),
-            body: Collidable {
-                pos: Point2::new(x, y),
-                speed: Vector2::new(dx, dy),
-                grounded: false,
-            },
+            body: Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
+                Point2::new(5f32, 1f32), Point2::new(5f32, 32f32),
+                Point2::new(27f32, 32f32), Point2::new(27f32, 1f32)
+            ]),
             sprite: sprite,
         }
     }
@@ -45,7 +44,7 @@ impl Entity for Ball {
         let points = vec![Point2::new(5f32, 1f32), Point2::new(5f32, 32f32),
             Point2::new(27f32, 32f32), Point2::new(27f32, 1f32)];
         let prev_speed = self.body.speed;
-        self.body.handle_collisions(&points, map, &prev_pos);
+        self.body.handle_collisions(map, &prev_pos);
         self.body.speed -= prev_speed - self.body.speed;
     }
     fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, G2dTexture>) {

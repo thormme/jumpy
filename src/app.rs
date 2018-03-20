@@ -104,12 +104,20 @@ impl App {
                 Flip::None,
                 &TextureSettings::new(),
             ).unwrap();
+            let enemy_sprite_path = assets.join("enemy.png");
+            let enemy_sprite = Texture::from_path(
+                &mut app.window.factory,
+                &enemy_sprite_path,
+                Flip::None,
+                &TextureSettings::new(),
+            ).unwrap();
             app.sprites.insert("player".to_owned(), player_sprite);
-            let player = Player::new(32.0, 5.0, "player".to_owned());
-            let enemy = Enemy::new(50.0, 50.0, "player".to_owned(), player.get_id());
+            app.sprites.insert("enemy".to_owned(), enemy_sprite);
+            let player = Player::new(33.0, 5.0, "player".to_owned());
+            let enemy = Enemy::new(50.0, 50.0, "enemy".to_owned(), player.get_id());
             app.entities.insert(player.get_id(), Box::new(player));
             app.entities.insert(enemy.get_id(), Box::new(enemy));
-            let ball = Ball::new(50.0, 100.0, 2.0, 0.0, "player".to_owned());
+            let ball = Ball::new(50.0, 100.0, 2.0, 0.0, "enemy".to_owned());
             app.entities.insert(ball.get_id(), Box::new(ball));
 
             app
