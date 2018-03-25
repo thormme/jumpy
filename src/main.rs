@@ -4,6 +4,12 @@ extern crate piston_window;
 extern crate snowflake;
 extern crate evmap;
 extern crate nalgebra;
+
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate serde_json;
+
 use piston_window::*;
 use app::App;
 
@@ -14,6 +20,7 @@ mod entity;
 mod collidable;
 mod ball;
 mod entity_states;
+mod sprite;
 
 extern crate sdl2_window;
 

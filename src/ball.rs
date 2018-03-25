@@ -1,6 +1,8 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use sprite::AnimationState;
+use sprite::Sprite;
 use entity_states::EntityStates;
 use piston_window::*;
 use piston::input::Key;
@@ -20,18 +22,18 @@ use snowflake::ProcessUniqueId;
 pub struct Ball {
     id: ProcessUniqueId,
     body: Collidable,
-    sprite: String,
+    animation: AnimationState,
 }
 
 impl Ball {
-    pub fn new(x: f32, y: f32, dx: f32, dy: f32, sprite: String) -> Ball {
+    pub fn new(x: f32, y: f32, dx: f32, dy: f32) -> Ball {
         Ball {
             id: ProcessUniqueId::new(),
             body: Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
-                Point2::new(5f32, 1f32), Point2::new(5f32, 32f32),
-                Point2::new(27f32, 32f32), Point2::new(27f32, 1f32)
+                Point2::new(0f32, 1f32), Point2::new(0f32, 16f32),
+                Point2::new(15f32, 16f32), Point2::new(15f32, 1f32)
             ]),
-            sprite: sprite,
+            animation: AnimationState::new("ball".to_string(), "still".to_string()),
         }
     }
 }
@@ -48,35 +50,28 @@ impl Entity for Ball {
         self.body.handle_collisions(map, &prev_pos);
         self.body.speed -= prev_speed - self.body.speed;
 
+        if self.body.grounded {
+            self.animation.set_animation("bounce".to_owned());
+        }
 
-        self.sprite = "enemy".to_owned();
         entities.for_zone(self.body.pos, 1, |entity| {
             if let Some(player) = entity.as_any().downcast_ref::<Player>() {
                 if let &Some(body) = &player.get_body() {
-                    self.sprite = "player".to_owned();
+                    if body.is_colliding(&self.body) {
+                        //self.animation.set_sprite("player".to_owned(), "run".to_owned());
+                    }
                 }
             }
         });
     }
-    fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, G2dTexture>) {
-        let src_rect = [
-            0f64,
-            0f64,
-            32f64,
-            32f64,
-        ];
-
-        let trans = context.transform.trans(
-            self.body.pos.x as f64,
-            self.body.pos.y as f64,
-        );
-
-        image.src_rect(src_rect).draw(
-            sprites.get(&self.sprite).unwrap(),
-            &DrawState::default(),
-            trans,
-            gl,
-        );
+    fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
+        let pos = &self.body.pos;
+        self.animation.draw(args, image, context, gl, sprites, |_src_rect| {
+            context.transform.trans(
+                pos.x as f64,
+                pos.y as f64,
+            )
+        });
     }
 
     fn get_body(&self) -> Option<&Collidable> {

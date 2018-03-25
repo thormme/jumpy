@@ -1,0 +1,131 @@
+{
+  "animations": {
+    "stand": {
+      "next": "stand",
+      "frames": [
+        {"name": "stand", "length": 1}
+      ]
+    },
+    "run": {
+      "next": "run",
+      "frames": [
+        {"name": "run0", "length": 0.125},
+        {"name": "run1", "length": 0.125},
+        {"name": "run0", "length": 0.125},
+        {"name": "run3", "length": 0.125}
+      ]
+    }
+  },
+  "frames": {
+    "stand": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 34,
+        "h": 49
+      }
+    },
+    "run0": {
+      "frame": {
+        "x": 34,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 34,
+        "h": 49
+      }
+    },
+    "run1": {
+      "frame": {
+        "x": 68,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 34,
+        "h": 49
+      }
+    },
+    "run2": {
+      "frame": {
+        "x": 0,
+        "y": 49,
+        "w": 34,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 34,
+        "h": 49
+      }
+    },
+    "run3": {
+      "frame": {
+        "x": 34,
+        "y": 49,
+        "w": 34,
+        "h": 49
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 34,
+        "h": 49
+      },
+      "sourceSize": {
+        "w": 34,
+        "h": 49
+      }
+    }
+  },
+  "meta": {
+    "app": "https://github.com/piskelapp/piskel/",
+    "version": "1.0",
+    "image": "player.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 102,
+      "h": 98
+    }
+  }
+}

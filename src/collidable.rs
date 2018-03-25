@@ -145,6 +145,20 @@ impl Collidable {
             }
         }
     }
+
+    pub fn is_colliding(&self, collidable: &Collidable) -> bool {
+        let offset1 = self.pos - Point2::origin();
+        let offset2 = collidable.pos - Point2::origin();
+        let bb_1 = (self.bounding_box.0 + offset1, self.bounding_box.1 + offset1);
+        let bb_2 = (collidable.bounding_box.0 + offset2, collidable.bounding_box.1 + offset2);
+        (
+            (bb_1.0.x <= bb_2.0.x && bb_1.1.x >= bb_2.0.x) ||
+            (bb_1.0.x <= bb_2.1.x && bb_1.1.x >= bb_2.1.x)
+        ) && (
+            (bb_1.0.y <= bb_2.0.y && bb_1.1.y >= bb_2.0.y) ||
+            (bb_1.0.y <= bb_2.1.y && bb_1.1.y >= bb_2.1.y)
+        )
+    }
 }
 
 fn get_vectors_from_tiles(tiles: &Vec<Vec<bool>>) -> Vec<(Point2<f32>, Point2<f32>)> {

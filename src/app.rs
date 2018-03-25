@@ -4,6 +4,7 @@ extern crate graphics;
 extern crate std;
 extern crate snowflake;
 extern crate evmap;
+use sprite::Sprite;
 use entity_states::EntityStates;
 use sdl2_window::Sdl2Window;
 use std::fs::File;
@@ -20,6 +21,7 @@ use enemy::Enemy;
 use ball::Ball;
 use std::collections::HashMap;
 use snowflake::ProcessUniqueId;
+use sprite::AnimationState;
 
 /*pub trait CollidableGrid {
     fn get_
@@ -46,7 +48,7 @@ pub struct App {
     image: Image,
     entities: EntityStates,
     keys: HashMap<Button, bool>,
-    sprites: HashMap<String, G2dTexture>
+    sprites: HashMap<String, Sprite>
 }
 
 impl App {
@@ -96,27 +98,20 @@ impl App {
                 sprites: HashMap::new()
             };
 
-            let player_sprite_path = assets.join("player.png");
-            let player_sprite = Texture::from_path(
-                &mut app.window.factory,
-                &player_sprite_path,
-                Flip::None,
-                &TextureSettings::new(),
-            ).unwrap();
-            let enemy_sprite_path = assets.join("enemy.png");
-            let enemy_sprite = Texture::from_path(
-                &mut app.window.factory,
-                &enemy_sprite_path,
-                Flip::None,
-                &TextureSettings::new(),
-            ).unwrap();
+            let player_sprite_path = assets.join("player.json");
+            let player_sprite = Sprite::new(&player_sprite_path, &mut app.window).unwrap();
+            let enemy_sprite_path = assets.join("enemy.json");
+            let enemy_sprite = Sprite::new(&enemy_sprite_path, &mut app.window).unwrap();
+            let ball_sprite_path = assets.join("ball.json");
+            let ball_sprite = Sprite::new(&ball_sprite_path, &mut app.window).unwrap();
             app.sprites.insert("player".to_owned(), player_sprite);
             app.sprites.insert("enemy".to_owned(), enemy_sprite);
-            let player = Player::new(33.0, 5.0, "player".to_owned());
+            app.sprites.insert("ball".to_owned(), ball_sprite);
+            let player = Player::new(33.0, 5.0, AnimationState::new("player".to_owned(), "run".to_owned()));
             let enemy = Enemy::new(50.0, 50.0, "enemy".to_owned(), player.get_id());
             app.entities.insert(player.get_id(), Box::new(player));
             app.entities.insert(enemy.get_id(), Box::new(enemy));
-            let ball = Ball::new(50.0, 100.0, 2.0, 0.0, "enemy".to_owned());
+            let ball = Ball::new(50.0, 100.0, 2.0, 0.0);
             app.entities.insert(ball.get_id(), Box::new(ball));
 
             app
@@ -133,7 +128,7 @@ impl App {
 
         let image = &self.image;
         let tilesheet = &self.tilesheet;
-        let entities = &self.entities;
+        let entities = &mut self.entities;
         let sprites = &self.sprites;
         self.window.draw_2d(&event, |context, gl| {
             clear([1.0; 4], gl);
@@ -168,7 +163,7 @@ impl App {
                 }
             }
 
-            entities.for_each(|entity| {
+            entities.for_each_mut(|entity| {
                 entity.draw(&event, args, &image, &context, gl, &sprites);
             });
         });

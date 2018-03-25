@@ -69,6 +69,12 @@ impl EntityStates {
         }
     }
 
+    pub fn for_each_mut<F>(&mut self, mut f: F) where F : FnMut(&mut Box<Entity>) {
+        for (_, entity) in self.entities.iter_mut() {
+            f(entity);
+        }
+    }
+
     pub fn for_zone<F>(&mut self, pos: Point2<f32>, range: usize, mut f: F) where F : FnMut(&mut Box<Entity>) {
         let zone = EntityStates::get_zone(pos);
         for y in zone.y.saturating_sub(range) ..= zone.y.saturating_add(range) {

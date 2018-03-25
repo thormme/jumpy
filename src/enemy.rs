@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use sprite::Sprite;
 use entity_states::EntityStates;
 use collidable::Collidable;
 use piston_window::*;
@@ -48,7 +49,7 @@ impl Entity for Enemy {
             }
         }
     }
-    fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, G2dTexture>) {
+    fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
         let src_rect = [
             0f64,
             0f64,
@@ -62,7 +63,7 @@ impl Entity for Enemy {
         );
 
         image.src_rect(src_rect).draw(
-            sprites.get(&self.sprite).unwrap(),
+            &sprites.get(&self.sprite).unwrap().texture,
             &DrawState::default(),
             trans,
             gl,

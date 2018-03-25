@@ -1,0 +1,30 @@
+{
+  "animations": {
+    "stand": {
+      "next": "stand",
+      "frames": [
+        {"name": "stand0", "length": 1}
+      ]
+    }
+  },
+  "frames": {
+    "stand0": {
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 32,
+        "h": 32
+      }
+    }
+  },
+  "meta": {
+    "app": "https://github.com/piskelapp/piskel/",
+    "version": "1.0",
+    "image": "enemy.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 32,
+      "h": 32
+    }
+  }
+}

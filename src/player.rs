@@ -1,6 +1,8 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use sprite::AnimationState;
+use sprite::Sprite;
 use entity_states::EntityStates;
 use piston_window::*;
 use piston::input::Key;
@@ -25,11 +27,11 @@ pub struct Player {
     body: Collidable,
     jumping: bool,
     facing: FacingDirection,
-    sprite: String,
+    animation: AnimationState,
 }
 
 impl Player {
-    pub fn new(x: f32, y: f32, sprite: String) -> Player {
+    pub fn new(x: f32, y: f32, animation: AnimationState) -> Player {
         Player {
             id: ProcessUniqueId::new(),
             body: Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
@@ -39,7 +41,7 @@ impl Player {
             ]),
             jumping: false,
             facing: FacingDirection::Right,
-            sprite: sprite,
+            animation: animation,
         }
     }
 }
@@ -50,12 +52,15 @@ impl Entity for Player {
         let prev_pos = self.body.pos.clone();
         self.body.speed.x *= 0.8f32;
         if keys.get_button_down(&Button::Keyboard(Key::Right)) {
+            self.animation.set_animation("run".to_owned());
             self.body.speed.x += 1f32;
             self.facing = FacingDirection::Right;
-        }
-        if keys.get_button_down(&Button::Keyboard(Key::Left)) {
+        } else if keys.get_button_down(&Button::Keyboard(Key::Left)) {
+            self.animation.set_animation("run".to_owned());
             self.body.speed.x -= 1f32;
             self.facing = FacingDirection::Left;
+        } else {
+            self.animation.set_animation("stand".to_owned());
         }
         if keys.get_button_down(&Button::Keyboard(Key::Up)) {
             if self.body.grounded {
@@ -73,7 +78,7 @@ impl Entity for Player {
         }
         if keys.get_button_down(&Button::Keyboard(Key::X)) {
             let x_speed = match self.facing { FacingDirection::Left => -2f32, FacingDirection::Right => 2f32 };
-            let ball = Ball::new(self.body.pos.x, self.body.pos.y, x_speed, -1f32, self.sprite.clone());
+            let ball = Ball::new(self.body.pos.x, self.body.pos.y, x_speed, -1f32);
             entities.insert(ball.get_id(), Box::new(ball));
         }
         if self.body.speed.x > 3f32 {
@@ -94,31 +99,21 @@ impl Entity for Player {
         });
     }
 
-    fn draw(&self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, G2dTexture>) {
-        let src_rect = [
-            0f64,
-            0f64,
-            34f64,
-            49f64,
-        ];
-
-        let trans = match &self.facing {
-            &FacingDirection::Right => context.transform.trans(
-                    self.body.pos.x as f64 - 2f64,
-                    self.body.pos.y as f64,
-                ),
-            &FacingDirection::Left => context.transform.trans(
-                    self.body.pos.x as f64 + 33f64,
-                    self.body.pos.y as f64,
-                ).flip_h(),
-        };
-
-        image.src_rect(src_rect).draw(
-            sprites.get(&self.sprite).unwrap(),
-            &DrawState::default(),
-            trans,
-            gl,
-        );
+    fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
+        let pos = &self.body.pos;
+        let facing = &self.facing;
+        self.animation.draw(args, image, context, gl, sprites, |src_rect| {
+            match facing {
+                &FacingDirection::Right => context.transform.trans(
+                        pos.x as f64 - 2f64,
+                        pos.y as f64,
+                    ),
+                &FacingDirection::Left => context.transform.trans(
+                        pos.x as f64 + src_rect[2] - 1f64,
+                        pos.y as f64,
+                    ).flip_h(),
+            }
+        });
     }
 
     fn get_body(&self) -> Option<&Collidable> {
