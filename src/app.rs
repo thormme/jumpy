@@ -22,6 +22,7 @@ use ball::Ball;
 use std::collections::HashMap;
 use snowflake::ProcessUniqueId;
 use sprite::AnimationState;
+use std::path::Path;
 
 /*pub trait CollidableGrid {
     fn get_
@@ -54,9 +55,7 @@ pub struct App {
 impl App {
     pub fn new() -> App {
 
-            let assets = find_folder::Search::ParentsThenKids(3, 3)
-                .for_folder("assets")
-                .unwrap();
+            let assets = Path::new("./src/assets");
 
             let file = File::open(assets.join("tiled_base64_zlib.tmx")).unwrap();
             let map = parse(file).unwrap();
@@ -72,7 +71,7 @@ impl App {
                 .opengl(opengl)
                 .exit_on_esc(true)
                 .build()
-                .unwrap();
+                .expect("failed to build Window");
 
 
             let tileset = map.get_tileset_by_gid(1).unwrap().clone();
