@@ -5,8 +5,6 @@ use entity_states::EntityStates;
 use collidable::Collidable;
 use piston_window::*;
 use app::{ButtonStates};
-use std::iter::*;
-use std::slice::*;
 use std::any::Any;
 use std::collections::*;
 use std::cmp::Eq;

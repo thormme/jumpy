@@ -5,17 +5,13 @@ use sprite::AnimationState;
 use sprite::Sprite;
 use entity_states::EntityStates;
 use piston_window::*;
-use piston::input::Key;
 use app::{ButtonStates};
-use std::iter::*;
-use std::slice::*;
-use std::any::Any;
 use std::collections::*;
 use entity::Entity;
 use collidable::Collidable;
 use player::Player;
-use self::tiled::{Map, PropertyValue, Tile};
-use self::nalgebra::{Vector2, Point2, Similarity2};
+use self::tiled::{Map};
+use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
 
 #[derive(Debug)]
@@ -44,8 +40,6 @@ impl Entity for Ball {
         let prev_pos = self.body.pos.clone();
         self.body.pos += self.body.speed;
 
-        let points = vec![Point2::new(5f32, 1f32), Point2::new(5f32, 32f32),
-            Point2::new(27f32, 32f32), Point2::new(27f32, 1f32)];
         let prev_speed = self.body.speed;
         self.body.handle_collisions(map, &prev_pos);
         self.body.speed -= prev_speed - self.body.speed;

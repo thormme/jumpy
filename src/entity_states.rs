@@ -23,7 +23,9 @@ impl EntityStates {
     }
 
     fn get_zone(pos: Point2<f32>) -> Point2<usize> {
-        return Point2::new(pos.x as usize / ZONE_WIDTH, pos.y as usize / ZONE_HEIGHT);
+        let x = if pos.x < 0f32 { 0 } else { pos.x as usize };
+        let y = if pos.y < 0f32 { 0 } else { pos.y as usize };
+        return Point2::new(x / ZONE_WIDTH, y / ZONE_HEIGHT);
     }
 
     pub fn remove(&mut self, id: &ProcessUniqueId) -> Option<Box<Entity>> {

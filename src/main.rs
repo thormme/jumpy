@@ -12,8 +12,6 @@ extern crate serde_json;
 
 use piston_window::*;
 use app::App;
-use piston::window::{OpenGLWindow, WindowSettings};
-use sdl2_window::Sdl2Window;
 
 mod app;
 mod player;
@@ -27,11 +25,7 @@ mod sprite;
 extern crate sdl2_window;
 
 fn main() {
-    let mut app = App::new();
-
-    let mut event_settings = EventSettings::new();
-    event_settings.ups = 60;
-    let mut events = Events::new(event_settings);
+    let app = App::new();
     event_loop::run(handle_event, app);
 }
 
@@ -62,10 +56,8 @@ fn handle_event(e: Event, app: &mut App) {
 #[cfg(not(target_os = "emscripten"))]
 mod event_loop {
     use app::App;
-use piston_window::Event;
-use piston::event_loop::{EventSettings, Events};
-    use piston::input::Input;
-    use sdl2_window::Sdl2Window;
+    use piston_window::Event;
+    use piston::event_loop::{EventSettings, Events};
 
     pub fn run(handler: fn(e: Event, app: &mut App),
                   mut app: App) {

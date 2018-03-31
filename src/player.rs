@@ -7,15 +7,12 @@ use entity_states::EntityStates;
 use piston_window::*;
 use piston::input::Key;
 use app::{ButtonStates};
-use std::iter::*;
-use std::slice::*;
-use std::any::Any;
 use std::collections::*;
 use entity::Entity;
 use ball::Ball;
 use collidable::Collidable;
-use self::tiled::{Map, PropertyValue, Tile};
-use self::nalgebra::{Vector2, Point2, Similarity2};
+use self::tiled::{Map};
+use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
 
 #[derive(Debug)]

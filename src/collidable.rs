@@ -1,14 +1,6 @@
 extern crate tiled;
 extern crate nalgebra;
 
-use piston_window::*;
-use piston::input::Key;
-use app::{ButtonStates};
-use std::iter::*;
-use std::slice::*;
-use std::any::Any;
-use std::collections::*;
-use entity::Entity;
 use self::tiled::{Map, PropertyValue, Tile};
 use self::nalgebra::{Vector2, Point2, Similarity2};
 
@@ -77,8 +69,12 @@ impl Collidable {
         let layer: &tiled::Layer = &map.layers[0];
         let tile_width = tileset.tile_width;
         let tile_height = tileset.tile_height;
-        let (small_x, large_x) = if self.pos.x < prev_pos.x { (self.pos.x + self.bounding_box.0.x - 1f32, prev_pos.x + self.bounding_box.1.x + 1f32) } else { (prev_pos.x + self.bounding_box.0.x - 1f32, self.pos.x + self.bounding_box.1.x + 1f32) };
-        let (small_y, large_y) = if self.pos.y < prev_pos.y { (self.pos.y + self.bounding_box.0.y - 1f32, prev_pos.y + self.bounding_box.1.y + 1f32) } else { (prev_pos.y + self.bounding_box.0.y - 1f32, self.pos.y + self.bounding_box.1.y + 1f32) };
+        let (mut small_x, mut large_x) = if self.pos.x < prev_pos.x { (self.pos.x + self.bounding_box.0.x - 1f32, prev_pos.x + self.bounding_box.1.x + 1f32) } else { (prev_pos.x + self.bounding_box.0.x - 1f32, self.pos.x + self.bounding_box.1.x + 1f32) };
+        let (mut small_y, mut large_y) = if self.pos.y < prev_pos.y { (self.pos.y + self.bounding_box.0.y - 1f32, prev_pos.y + self.bounding_box.1.y + 1f32) } else { (prev_pos.y + self.bounding_box.0.y - 1f32, self.pos.y + self.bounding_box.1.y + 1f32) };
+        small_x = if small_x < 0f32 {0f32} else {small_x};
+        large_x = if large_x < 0f32 {0f32} else {large_x};
+        small_y = if small_y < 0f32 {0f32} else {small_y};
+        large_y = if large_y < 0f32 {0f32} else {large_y};
         let tile_x = (small_x as u32 / tile_width) as usize;
         let tile_y = (small_y as u32 / tile_height) as usize;
         let tile_x2 = (large_x / tile_width as f32) as usize;
@@ -162,9 +158,12 @@ impl Collidable {
 }
 
 fn get_vectors_from_tiles(tiles: &Vec<Vec<bool>>) -> Vec<(Point2<f32>, Point2<f32>)> {
+    let mut vectors = vec![];
+    if tiles.len() == 0 {
+        return vectors;
+    }
     let width = tiles[0].len();
     let height = tiles.len();
-    let mut vectors = vec![];
     for y in 0..height + 1usize {
         let mut vec = (Point2::new(0f32, 0f32), Point2::new(0f32, 0f32));
         let mut prev_line = false;

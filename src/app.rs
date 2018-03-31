@@ -49,7 +49,9 @@ pub struct App {
     image: Image,
     entities: EntityStates,
     keys: HashMap<Button, bool>,
-    sprites: HashMap<String, Sprite>
+    sprites: HashMap<String, Sprite>,
+    viewport: [f64; 4],
+    tracking_entity: ProcessUniqueId
 }
 
 impl App {
@@ -66,10 +68,11 @@ impl App {
             // Create an Glutin window.
             let mut window: PistonWindow<Sdl2Window> = WindowSettings::new(
                     "spinning-square",
-                    [640, 480]
+                    [1024, 860]
                 )
                 .opengl(opengl)
                 .exit_on_esc(true)
+                .vsync(true)
                 .build()
                 .expect("failed to build Window");
 
@@ -94,7 +97,9 @@ impl App {
                 image: image,
                 entities: EntityStates::new(),
                 keys: HashMap::new(),
-                sprites: HashMap::new()
+                sprites: HashMap::new(),
+                viewport: [0f64, 0f64, 1024f64, 860f64],
+                tracking_entity: ProcessUniqueId::new()
             };
 
             let player_sprite_path = assets.join("player.json");
@@ -107,6 +112,7 @@ impl App {
             app.sprites.insert("enemy".to_owned(), enemy_sprite);
             app.sprites.insert("ball".to_owned(), ball_sprite);
             let player = Player::new(33.0, 5.0, AnimationState::new("player".to_owned(), "run".to_owned()));
+            app.tracking_entity = player.get_id();
             let enemy = Enemy::new(50.0, 50.0, "enemy".to_owned(), player.get_id());
             app.entities.insert(player.get_id(), Box::new(player));
             app.entities.insert(enemy.get_id(), Box::new(enemy));
@@ -129,8 +135,11 @@ impl App {
         let tilesheet = &self.tilesheet;
         let entities = &mut self.entities;
         let sprites = &self.sprites;
+        let viewport = &self.viewport;
         self.window.draw_2d(&event, |context, gl| {
             clear([1.0; 4], gl);
+
+            let viewport_context = context.trans(-viewport[0].floor(), -viewport[1].floor());
 
             for (y, row) in layer.tiles.iter().enumerate() {
                 for (x, &tile) in row.iter().enumerate() {
@@ -148,7 +157,7 @@ impl App {
                         tile_height as f64,
                     ];
 
-                    let trans = context.transform.trans(
+                    let trans = viewport_context.transform.trans(
                         x as f64 * tile_width as f64,
                         y as f64 * tile_height as f64,
                     );
@@ -163,12 +172,33 @@ impl App {
             }
 
             entities.for_each_mut(|entity| {
-                entity.draw(&event, args, &image, &context, gl, &sprites);
+                entity.draw(&event, args, &image, &viewport_context, gl, &sprites);
             });
         });
     }
 
     pub fn update(&mut self, args: &UpdateArgs) {
+        if let Some(tracking_entity) = self.entities.get(&self.tracking_entity) {
+            if let Some(body) = tracking_entity.get_body() {
+                if (body.pos.x as f64) > self.viewport[0] + self.viewport[2] * 0.60f64 {
+                    let offset = body.pos.x as f64 - (self.viewport[0] + self.viewport[2] * 0.60f64);
+                    self.viewport[0] += offset * 0.1f64;
+                }
+                if (body.pos.x as f64) < self.viewport[0] + self.viewport[2] * 0.40f64 {
+                    let offset = body.pos.x as f64 - (self.viewport[0] + self.viewport[2] * 0.40f64);
+                    self.viewport[0] += offset * 0.1f64;
+                }
+                if (body.pos.y as f64) > self.viewport[1] + self.viewport[3] * 0.60f64 {
+                    let offset = body.pos.y as f64 - (self.viewport[1] + self.viewport[3] * 0.60f64);
+                    self.viewport[1] += offset * 0.1f64;
+                }
+                if (body.pos.y as f64) < self.viewport[1] + self.viewport[3] * 0.40f64 {
+                    let offset = body.pos.y as f64 - (self.viewport[1] + self.viewport[3] * 0.40f64);
+                    self.viewport[1] += offset * 0.1f64;
+                }
+            }
+        }
+        //
         let map = &self.map;
         let keys = &self.keys;
         let entity_ids: Vec<ProcessUniqueId> = self.entities.keys().cloned().collect();
