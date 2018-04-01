@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use damageable::Damageable;
 use sprite::AnimationState;
 use sprite::Sprite;
 use entity_states::EntityStates;
@@ -9,7 +10,7 @@ use piston::input::Key;
 use app::{ButtonStates};
 use std::collections::*;
 use entity::Entity;
-use ball::Ball;
+use bullet::Bullet;
 use collidable::Collidable;
 use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
@@ -44,7 +45,7 @@ impl Player {
 }
 
 impl Entity for Player {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) {
+    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
         self.body.speed.y += 0.5f32;
         let prev_pos = self.body.pos.clone();
         self.body.speed.x *= 0.8f32;
@@ -74,9 +75,9 @@ impl Entity for Player {
             self.body.pos.y += 1f32;
         }
         if keys.get_button_down(&Button::Keyboard(Key::X)) {
-            let x_speed = match self.facing { FacingDirection::Left => -2f32, FacingDirection::Right => 2f32 };
-            let ball = Ball::new(self.body.pos.x, self.body.pos.y, x_speed, -1f32);
-            entities.insert(ball.get_id(), Box::new(ball));
+            let x_speed = match self.facing { FacingDirection::Left => -8f32, FacingDirection::Right => 8f32 };
+            let bullet = Bullet::new(self.body.pos.x, self.body.pos.y, x_speed, 0f32);
+            entities.insert(bullet.get_id(), Box::new(bullet));
         }
         if self.body.speed.x > 3f32 {
             self.body.speed.x = 3f32;
@@ -94,6 +95,8 @@ impl Entity for Player {
                 println!("{:?}", player);
             }
         });
+
+        false
     }
 
     fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
@@ -119,5 +122,9 @@ impl Entity for Player {
 
     fn get_id(&self) -> ProcessUniqueId {
         self.id
+    }
+
+    fn get_damageable(&mut self) -> Option<&mut Damageable> {
+        None
     }
 }

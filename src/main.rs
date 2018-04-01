@@ -21,6 +21,8 @@ mod collidable;
 mod ball;
 mod entity_states;
 mod sprite;
+mod damageable;
+mod bullet;
 
 extern crate sdl2_window;
 

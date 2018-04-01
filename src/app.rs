@@ -205,8 +205,9 @@ impl App {
         for id in entity_ids {
             let mut entity_result = self.entities.remove(&id);
             if let Some(mut entity) = entity_result {
-                entity.update(args, keys, &mut self.entities, &map);
-                self.entities.insert(id, entity);
+                if !entity.update(args, keys, &mut self.entities, &map) {
+                    self.entities.insert(id, entity);
+                }
             }
         }
     }

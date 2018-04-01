@@ -16,15 +16,15 @@ use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
 
 #[derive(Debug)]
-pub struct Ball {
+pub struct Bullet {
     id: ProcessUniqueId,
     body: Collidable,
     animation: AnimationState,
 }
 
-impl Ball {
-    pub fn new(x: f32, y: f32, dx: f32, dy: f32) -> Ball {
-        Ball {
+impl Bullet {
+    pub fn new(x: f32, y: f32, dx: f32, dy: f32) -> Self {
+        Bullet {
             id: ProcessUniqueId::new(),
             body: Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
                 Point2::new(0f32, 1f32), Point2::new(0f32, 16f32),
@@ -35,31 +35,30 @@ impl Ball {
     }
 }
 
-impl Entity for Ball {
+impl Entity for Bullet {
     fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
-        self.body.speed.y += 0.1f32;
+        let mut destroy = false;
         let prev_pos = self.body.pos.clone();
         self.body.pos += self.body.speed;
 
-        let prev_speed = self.body.speed;
-        self.body.handle_collisions(map, &prev_pos);
-        self.body.speed -= prev_speed - self.body.speed;
-
-        if self.body.grounded {
-            self.animation.set_animation("bounce".to_owned());
-        }
+        //self.body.handle_collisions(map, &prev_pos);
 
         entities.for_zone(self.body.pos, 1, |entity| {
-            if let Some(player) = entity.as_any().downcast_ref::<Player>() {
-                if let &Some(body) = &player.get_body() {
-                    if body.is_colliding(&self.body) {
-                        //self.animation.set_sprite("player".to_owned(), "run".to_owned());
-                    }
+            let mut colliding = false;
+            if let &Some(body) = &entity.get_body() {
+                if body.is_colliding(&self.body) {
+                    colliding = true;
+                }
+            }
+            if colliding {
+                if let Some(damageable) = entity.get_damageable() {
+                    damageable.set_health(0);
+                    destroy = true;
                 }
             }
         });
 
-        false
+        destroy
     }
     fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
         let pos = &self.body.pos;

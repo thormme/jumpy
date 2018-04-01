@@ -3,6 +3,7 @@ extern crate tiled;
 use sprite::Sprite;
 use entity_states::EntityStates;
 use collidable::Collidable;
+use damageable::Damageable;
 use piston_window::*;
 use app::{ButtonStates};
 use std::any::Any;
@@ -12,9 +13,10 @@ use self::tiled::Map;
 use snowflake::ProcessUniqueId;
 
 pub trait Entity : AsAny {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map);
+    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool;
     fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprite: &HashMap<String, Sprite>);
     fn get_body(&self) -> Option<&Collidable>;
+    fn get_damageable(&mut self) -> Option<&mut Damageable>;
     fn get_id(&self) -> ProcessUniqueId;
 }
 

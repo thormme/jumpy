@@ -86,7 +86,7 @@ impl Collidable {
                 solid_tile_row.push(false);
                 let solid_vec_size = solid_tile_row.len() - 1usize;
                 let ref mut tile_solid = solid_tile_row[solid_vec_size];
-                if y >= layer.tiles.len() || x > layer.tiles[y].len() {
+                if y >= layer.tiles.len() || x >= layer.tiles[y].len() {
                     continue;
                 }
                 let tile = layer.tiles[y as usize][x as usize] as usize;
