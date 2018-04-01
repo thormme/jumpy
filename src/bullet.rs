@@ -77,8 +77,4 @@ impl Entity for Bullet {
     fn get_id(&self) -> ProcessUniqueId {
         self.id
     }
-
-    fn get_damageable(&mut self) -> Option<&mut Damageable> {
-        None
-    }
 }
