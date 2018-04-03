@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use component_states::ComponentStates;
 use sprite::Sprite;
 use entity_states::EntityStates;
 use collidable::Collidable;
@@ -18,6 +19,8 @@ pub trait Entity : AsAny {
     fn get_id(&self) -> ProcessUniqueId;
     fn get_body(&self) -> Option<&Collidable> { None }
     fn get_damageable(&mut self) -> Option<&mut Damageable> { None }
+    fn get_components(&self) -> &ComponentStates;
+    fn get_components_mut(&mut self) -> &mut ComponentStates;
 }
 
 impl PartialEq for Entity {

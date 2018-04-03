@@ -4,6 +4,7 @@ extern crate piston_window;
 extern crate snowflake;
 extern crate evmap;
 extern crate nalgebra;
+extern crate tiled;
 
 #[macro_use]
 extern crate serde_derive;
@@ -23,6 +24,8 @@ mod entity_states;
 mod sprite;
 mod damageable;
 mod bullet;
+mod component;
+mod component_states;
 
 extern crate sdl2_window;
 

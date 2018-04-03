@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use component_states::ComponentStates;
 use damageable::Damageable;
 use sprite::AnimationState;
 use sprite::Sprite;
@@ -20,10 +21,16 @@ pub struct Ball {
     id: ProcessUniqueId,
     body: Collidable,
     animation: AnimationState,
+    components: ComponentStates,
 }
 
 impl Ball {
     pub fn new(x: f32, y: f32, dx: f32, dy: f32) -> Ball {
+        let mut components = ComponentStates::new();
+        components.insert(Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
+            Point2::new(0f32, 1f32), Point2::new(0f32, 16f32),
+            Point2::new(15f32, 16f32), Point2::new(15f32, 1f32)
+        ]));
         Ball {
             id: ProcessUniqueId::new(),
             body: Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
@@ -31,6 +38,7 @@ impl Ball {
                 Point2::new(15f32, 16f32), Point2::new(15f32, 1f32)
             ]),
             animation: AnimationState::new("ball".to_string(), "still".to_string()),
+            components: components,
         }
     }
 }
@@ -77,5 +85,13 @@ impl Entity for Ball {
 
     fn get_id(&self) -> ProcessUniqueId {
         self.id
+    }
+
+    fn get_components(&self) -> &ComponentStates {
+        &self.components
+    }
+
+    fn get_components_mut(&mut self) -> &mut ComponentStates {
+        &mut self.components
     }
 }

@@ -1,6 +1,12 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use entity_states::EntityStates;
+use app::ButtonStates;
+use piston_window::UpdateArgs;
+use entity::Entity;
+use component::Component;
+use piston_window::Event;
 use self::tiled::{Map, PropertyValue, Tile};
 use self::nalgebra::{Vector2, Point2, Similarity2};
 
@@ -11,6 +17,16 @@ pub struct Collidable {
     pub points: Vec<Point2<f32>>,
     pub bounding_box: (Point2<f32>, Point2<f32>),
     pub grounded: bool,
+    pub prev_pos: Point2<f32>,
+}
+
+impl Component for Collidable {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+        let prev_pos = self.prev_pos;
+        self.handle_collisions(map, &prev_pos);
+        self.prev_pos = self.pos;
+        false
+    }
 }
 
 impl Collidable {
@@ -37,6 +53,7 @@ impl Collidable {
             points: points,
             bounding_box: (small_point, large_point),
             grounded: false,
+            prev_pos: pos,
         }
     }
 

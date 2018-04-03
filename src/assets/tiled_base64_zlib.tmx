@@ -319,7 +319,7 @@
    <property name="prop2" value="some text"/>
   </properties>
   <data encoding="base64" compression="zlib">
-   eJzt2ctKw0AYgNGsvK1t3Wv3VXHtQnCl+P6PYwYMjHUymdzKEM+BH2wRCfM1kybum7z7dh5O5qadXc/sB/4eeVPW77bRYy161EWPunTr9xFNzrHRY0259bto5yrxvh7rya1f+G51+Pn5GL2vx3pcP+oydv3CeXJ6TxLfj+gxzxLrF/p0TfSY566dy4JJXddjXRM95rlu/j4PST0TCd1KmhwGfoe88Hl+T0zqml3SpM/r7CP9H8b0mNrksZ23hY5361I9Ut+h4jk0v+9Hhny287LcIW9a3/kxNGPZr8qEHuGzvnSPsEc9R6/1KLPE+ZHau8Ie9RW91qPMOfYr1/NycY8x+9YY4dzYLXS8Wzfl/Aif96cRE84NPcr0Pd/IrXm3vmOHYX09uj1myWGYHnXRoy65HpyfHnXRoy561MX/V+uiR130qIseddGjLnrURY+66AEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADTfQN9uziS
+   eJzt2btqwzAUBmBPvc1NurfZe6Fzh0Knlr7/49SCGkQqy5IvQaTfBwfikARzfkuylX2Xd9/Xw1Hd9LUbqf3E75E3p3+3nTy2Mta/x8x35LEd46MtQ/8+o8oJ40Ye28n176Kvq8T78thOrn/h3urw+zpeT+SxHetHW2r7F8bJ8TNJ/Dwij2XW6F/IZ8hEHsvc9XVZUKl1PTZkIo9lrru/+yGpPZGQW0kmh4nPkBeu549EpdbskkzGvC0+0/+hJo+5mTz19b7S+Z67VB6pe6i4Dl1+f+vYV1+v653yWRsbH1NVy3xVJuQRrvW18whz1Et0LI8ya4yP1NwV5qjv6FgeZU4xX1nPy8V51MxbNcLY2K10vuduzvgI1/tzRYWxIY8yY/sbuZ4P/a0tpo3lMcwxaxbT5NEWebQllwenJ4+2yKMt8miL/1fbIo+2yKMt8miLPNoij7bIoy3yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgPl+AJfXOME=
   </data>
  </layer>
  <objectgroup name="Object group" visible="0">

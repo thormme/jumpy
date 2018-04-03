@@ -1,6 +1,8 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use std::any::TypeId;
+use component_states::ComponentStates;
 use damageable::Damageable;
 use sprite::AnimationState;
 use sprite::Sprite;
@@ -12,6 +14,7 @@ use std::collections::*;
 use entity::Entity;
 use bullet::Bullet;
 use collidable::Collidable;
+use component::Component;
 use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
@@ -26,10 +29,17 @@ pub struct Player {
     jumping: bool,
     facing: FacingDirection,
     animation: AnimationState,
+    components: ComponentStates,
 }
 
 impl Player {
     pub fn new(x: f32, y: f32, animation: AnimationState) -> Player {
+        let mut components = ComponentStates::new();
+        components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
+            Point2::new(0f32, 0f32), Point2::new(0f32, 48f32),
+            Point2::new(31f32, 24f32), Point2::new(0f32, 24f32),
+            Point2::new(31f32, 48f32), Point2::new(31f32, 0f32)
+        ]));
         Player {
             id: ProcessUniqueId::new(),
             body: Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
@@ -40,54 +50,65 @@ impl Player {
             jumping: false,
             facing: FacingDirection::Right,
             animation: animation,
+            components: components,
         }
     }
 }
 
 impl Entity for Player {
     fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
-        self.body.speed.y += 0.5f32;
-        let prev_pos = self.body.pos.clone();
-        self.body.speed.x *= 0.8f32;
-        if keys.get_button_down(&Button::Keyboard(Key::Right)) {
-            self.animation.set_animation("run".to_owned());
-            self.body.speed.x += 1f32;
-            self.facing = FacingDirection::Right;
-        } else if keys.get_button_down(&Button::Keyboard(Key::Left)) {
-            self.animation.set_animation("run".to_owned());
-            self.body.speed.x -= 1f32;
-            self.facing = FacingDirection::Left;
-        } else {
-            self.animation.set_animation("stand".to_owned());
-        }
-        if keys.get_button_down(&Button::Keyboard(Key::Up)) {
-            if self.body.grounded {
-                self.body.speed.y = -10f32;
-                self.jumping = true;
+        if let Some(body) = self.components.get_mut::<Collidable>() {
+            body.speed.y += 0.5f32;
+            body.speed.x *= 0.8f32;
+            if keys.get_button_down(&Button::Keyboard(Key::Right)) {
+                self.animation.set_animation("run".to_owned());
+                body.speed.x += 1f32;
+                self.facing = FacingDirection::Right;
+            } else if keys.get_button_down(&Button::Keyboard(Key::Left)) {
+                self.animation.set_animation("run".to_owned());
+                body.speed.x -= 1f32;
+                self.facing = FacingDirection::Left;
+            } else {
+                self.animation.set_animation("stand".to_owned());
             }
-        } else if self.jumping {
-            self.jumping = false;
-            if self.body.speed.y < -2.5f32 {
-                self.body.speed.y = -2.5f32;
+            if keys.get_button_down(&Button::Keyboard(Key::Up)) {
+                if body.grounded {
+                    body.speed.y = -10f32;
+                    self.jumping = true;
+                }
+            } else if self.jumping {
+                self.jumping = false;
+                if body.speed.y < -2.5f32 {
+                    body.speed.y = -2.5f32;
+                }
             }
+            if keys.get_button_down(&Button::Keyboard(Key::Down)) {
+                body.pos.y += 1f32;
+            }
+            if keys.get_button_down(&Button::Keyboard(Key::X)) {
+                let x_speed = match self.facing { FacingDirection::Left => -8f32, FacingDirection::Right => 8f32 };
+                let bullet = Bullet::new(body.pos.x, body.pos.y, x_speed, 0f32);
+                entities.insert(bullet.get_id(), Box::new(bullet));
+            }
+            if body.speed.x > 3f32 {
+                body.speed.x = 3f32;
+            }
+            if body.speed.x < -3f32 {
+                body.speed.x = -3f32;
+            }
+            body.pos += body.speed;
         }
-        if keys.get_button_down(&Button::Keyboard(Key::Down)) {
-            self.body.pos.y += 1f32;
-        }
-        if keys.get_button_down(&Button::Keyboard(Key::X)) {
-            let x_speed = match self.facing { FacingDirection::Left => -8f32, FacingDirection::Right => 8f32 };
-            let bullet = Bullet::new(self.body.pos.x, self.body.pos.y, x_speed, 0f32);
-            entities.insert(bullet.get_id(), Box::new(bullet));
-        }
-        if self.body.speed.x > 3f32 {
-            self.body.speed.x = 3f32;
-        }
-        if self.body.speed.x < -3f32 {
-            self.body.speed.x = -3f32;
-        }
-        self.body.pos += self.body.speed;
 
-        self.body.handle_collisions(map, &prev_pos);
+
+        let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
+        for type_id in component_types {
+            let mut component_result = self.components.remove_component(type_id);
+            if let Some(mut component) = component_result {
+                if !component.update(self, args, keys, entities, &map) {
+                    self.components.insert_component(type_id, component);
+                }
+            }
+        }
         //println!("{:?}", self.pos);
 
         entities.for_each(|entity| {
@@ -100,20 +121,22 @@ impl Entity for Player {
     }
 
     fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        let pos = &self.body.pos;
-        let facing = &self.facing;
-        self.animation.draw(args, image, context, gl, sprites, |src_rect| {
-            match facing {
-                &FacingDirection::Right => context.transform.trans(
-                        pos.x as f64 - 2f64,
-                        pos.y as f64,
-                    ),
-                &FacingDirection::Left => context.transform.trans(
-                        pos.x as f64 + src_rect[2] - 1f64,
-                        pos.y as f64,
-                    ).flip_h(),
-            }
-        });
+        if let Some(body) = self.components.get_mut::<Collidable>() {
+            let pos = &body.pos;
+            let facing = &self.facing;
+            self.animation.draw(args, image, context, gl, sprites, |src_rect| {
+                match facing {
+                    &FacingDirection::Right => context.transform.trans(
+                            pos.x as f64 - 2f64,
+                            pos.y as f64,
+                        ),
+                    &FacingDirection::Left => context.transform.trans(
+                            pos.x as f64 + src_rect[2] - 1f64,
+                            pos.y as f64,
+                        ).flip_h(),
+                }
+            });
+        }
     }
 
     fn get_body(&self) -> Option<&Collidable> {
@@ -122,5 +145,13 @@ impl Entity for Player {
 
     fn get_id(&self) -> ProcessUniqueId {
         self.id
+    }
+
+    fn get_components(&self) -> &ComponentStates {
+        &self.components
+    }
+
+    fn get_components_mut(&mut self) -> &mut ComponentStates {
+        &mut self.components
     }
 }

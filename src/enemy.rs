@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use component_states::ComponentStates;
 use damageable::Damageable;
 use sprite::Sprite;
 use entity_states::EntityStates;
@@ -20,10 +21,16 @@ pub struct Enemy {
     sprite: String,
     player_id: ProcessUniqueId,
     health: u32,
+    components: ComponentStates,
 }
 
 impl Enemy {
     pub fn new(x: f32, y: f32, sprite: String, player_id: ProcessUniqueId) -> Enemy {
+        let mut components = ComponentStates::new();
+        components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
+            Point2::new(0f32, 0f32), Point2::new(0f32, 32f32),
+            Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
+        ]));
         Enemy {
             id: ProcessUniqueId::new(),
             body: Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
@@ -33,6 +40,7 @@ impl Enemy {
             sprite: sprite,
             player_id: player_id,
             health: 1u32,
+            components: components,
         }
     }
 }
@@ -96,5 +104,13 @@ impl Entity for Enemy {
 
     fn get_damageable(&mut self) -> Option<&mut Damageable> {
         Some(self)
+    }
+
+    fn get_components(&self) -> &ComponentStates {
+        &self.components
+    }
+
+    fn get_components_mut(&mut self) -> &mut ComponentStates {
+        &mut self.components
     }
 }
