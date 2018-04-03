@@ -24,40 +24,35 @@ enum FacingDirection {Left, Right}
 
 #[derive(Debug)]
 pub struct Player {
-    id: ProcessUniqueId,
-    body: Collidable,
     jumping: bool,
     facing: FacingDirection,
     animation: AnimationState,
-    components: ComponentStates,
 }
 
 impl Player {
-    pub fn new(x: f32, y: f32, animation: AnimationState) -> Player {
+    pub fn new(animation: AnimationState) -> Player {
+        Player {
+            jumping: false,
+            facing: FacingDirection::Right,
+            animation: animation,
+        }
+    }
+
+    pub fn new_entity(x: f32, y: f32, animation: AnimationState) -> Entity {
         let mut components = ComponentStates::new();
         components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
             Point2::new(0f32, 0f32), Point2::new(0f32, 48f32),
             Point2::new(31f32, 24f32), Point2::new(0f32, 24f32),
             Point2::new(31f32, 48f32), Point2::new(31f32, 0f32)
         ]));
-        Player {
-            id: ProcessUniqueId::new(),
-            body: Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
-                Point2::new(0f32, 0f32), Point2::new(0f32, 48f32),
-                Point2::new(31f32, 24f32), Point2::new(0f32, 24f32),
-                Point2::new(31f32, 48f32), Point2::new(31f32, 0f32)
-            ]),
-            jumping: false,
-            facing: FacingDirection::Right,
-            animation: animation,
-            components: components,
-        }
+        components.insert(Player::new(animation));
+        Entity::new(components)
     }
 }
 
-impl Entity for Player {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
-        if let Some(body) = self.components.get_mut::<Collidable>() {
+impl Component for Player {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+        if let Some(body) = entity.components.get_mut::<Collidable>() {
             body.speed.y += 0.5f32;
             body.speed.x *= 0.8f32;
             if keys.get_button_down(&Button::Keyboard(Key::Right)) {
@@ -87,7 +82,7 @@ impl Entity for Player {
             }
             if keys.get_button_down(&Button::Keyboard(Key::X)) {
                 let x_speed = match self.facing { FacingDirection::Left => -8f32, FacingDirection::Right => 8f32 };
-                let bullet = Bullet::new(body.pos.x, body.pos.y, x_speed, 0f32);
+                let bullet = Bullet::new_entity(body.pos.x, body.pos.y, x_speed, 0f32);
                 entities.insert(bullet.get_id(), Box::new(bullet));
             }
             if body.speed.x > 3f32 {
@@ -96,32 +91,19 @@ impl Entity for Player {
             if body.speed.x < -3f32 {
                 body.speed.x = -3f32;
             }
-            body.pos += body.speed;
         }
-
-
-        let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
-        for type_id in component_types {
-            let mut component_result = self.components.remove_component(type_id);
-            if let Some(mut component) = component_result {
-                if !component.update(self, args, keys, entities, &map) {
-                    self.components.insert_component(type_id, component);
-                }
-            }
-        }
-        //println!("{:?}", self.pos);
 
         entities.for_each(|entity| {
-            if let Some(player) = entity.as_any().downcast_ref::<Player>() {
-                println!("{:?}", player);
+            if let Some(_player) = entity.components.get::<Player>() {
+                println!("{:?}", entity);
             }
         });
 
         false
     }
 
-    fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        if let Some(body) = self.components.get_mut::<Collidable>() {
+    fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
+        if let Some(body) = entity.components.get::<Collidable>() {
             let pos = &body.pos;
             let facing = &self.facing;
             self.animation.draw(args, image, context, gl, sprites, |src_rect| {
@@ -137,21 +119,5 @@ impl Entity for Player {
                 }
             });
         }
-    }
-
-    fn get_body(&self) -> Option<&Collidable> {
-        return Some(&self.body);
-    }
-
-    fn get_id(&self) -> ProcessUniqueId {
-        self.id
-    }
-
-    fn get_components(&self) -> &ComponentStates {
-        &self.components
-    }
-
-    fn get_components_mut(&mut self) -> &mut ComponentStates {
-        &mut self.components
     }
 }

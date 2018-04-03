@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use component::Component;
 use component_states::ComponentStates;
 use damageable::Damageable;
 use sprite::Sprite;
@@ -16,32 +17,28 @@ use nalgebra::{Vector2, Point2};
 
 #[derive(Debug)]
 pub struct Enemy {
-    id: ProcessUniqueId,
-    body: Collidable,
     sprite: String,
     player_id: ProcessUniqueId,
     health: u32,
-    components: ComponentStates,
 }
 
 impl Enemy {
-    pub fn new(x: f32, y: f32, sprite: String, player_id: ProcessUniqueId) -> Enemy {
+    pub fn new(sprite: String, player_id: ProcessUniqueId) -> Enemy {
+        Enemy {
+            sprite: sprite,
+            player_id: player_id,
+            health: 1u32,
+        }
+    }
+
+    pub fn new_entity(x: f32, y: f32, sprite: String, player_id: ProcessUniqueId) -> Entity {
         let mut components = ComponentStates::new();
         components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
             Point2::new(0f32, 0f32), Point2::new(0f32, 32f32),
             Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
         ]));
-        Enemy {
-            id: ProcessUniqueId::new(),
-            body: Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
-                Point2::new(0f32, 0f32), Point2::new(0f32, 32f32),
-                Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
-            ]),
-            sprite: sprite,
-            player_id: player_id,
-            health: 1u32,
-            components: components,
-        }
+        components.insert(Enemy::new(sprite, player_id));
+        Entity::new(components)
     }
 }
 
@@ -55,15 +52,17 @@ impl Damageable for Enemy {
     }
 }
 
-impl Entity for Enemy {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
-        if let Some(player_opt) = entities.get(&self.player_id) {
-            if let Some(player) = player_opt.as_any().downcast_ref::<Player>() {
-                if let &Some(body) = &player.get_body() {
-                    let pos = body.pos;
-                    let direction = (pos.y-self.body.pos.y).atan2(pos.x-self.body.pos.x);
-                    self.body.pos.x += direction.cos()*10f32 * args.dt as f32;
-                    self.body.pos.y += direction.sin()*10f32 * args.dt as f32;
+impl Component for Enemy {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+        if let Some(player) = entities.get_mut(&self.player_id) {
+            if player.components.get::<Player>().is_some() {
+                if let Some(other_body) = player.components.get_mut::<Collidable>() {
+                    if let Some(body) = entity.components.get_mut::<Collidable>() {
+                        let pos = other_body.pos;
+                        let direction = (pos.y-body.pos.y).atan2(pos.x-body.pos.x);
+                        body.pos.x += direction.cos()*10f32 * args.dt as f32;
+                        body.pos.y += direction.sin()*10f32 * args.dt as f32;
+                    }
                 }
             }
         }
@@ -73,44 +72,26 @@ impl Entity for Enemy {
 
         false
     }
-    fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        let src_rect = [
-            0f64,
-            0f64,
-            32f64,
-            32f64,
-        ];
+    fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
+        if let Some(body) = entity.components.get::<Collidable>() {
+            let src_rect = [
+                0f64,
+                0f64,
+                32f64,
+                32f64,
+            ];
 
-        let trans = context.transform.trans(
-            self.body.pos.x as f64,
-            self.body.pos.y as f64,
-        );
+            let trans = context.transform.trans(
+                body.pos.x as f64,
+                body.pos.y as f64,
+            );
 
-        image.src_rect(src_rect).draw(
-            &sprites.get(&self.sprite).unwrap().texture,
-            &DrawState::default(),
-            trans,
-            gl,
-        );
-    }
-
-    fn get_body(&self) -> Option<&Collidable> {
-        Some(&self.body)
-    }
-
-    fn get_id(&self) -> ProcessUniqueId {
-        self.id
-    }
-
-    fn get_damageable(&mut self) -> Option<&mut Damageable> {
-        Some(self)
-    }
-
-    fn get_components(&self) -> &ComponentStates {
-        &self.components
-    }
-
-    fn get_components_mut(&mut self) -> &mut ComponentStates {
-        &mut self.components
+            image.src_rect(src_rect).draw(
+                &sprites.get(&self.sprite).unwrap().texture,
+                &DrawState::default(),
+                trans,
+                gl,
+            );
+        }
     }
 }

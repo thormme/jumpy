@@ -1,4 +1,5 @@
 
+use collidable::Collidable;
 use std::collections::hash_map::Keys;
 use std::collections::HashSet;
 use nalgebra::Point2;
@@ -30,7 +31,7 @@ impl EntityStates {
 
     pub fn remove(&mut self, id: &ProcessUniqueId) -> Option<Box<Entity>> {
         if let Some(entity) = self.entities.remove(id) {
-            if let Some(body) = entity.get_body() {
+            if let Some(body) = entity.components.get::<Collidable>() {
                 let zone = EntityStates::get_zone(body.pos);
                 if zone.y < self.entity_zones.len() && zone.x < self.entity_zones[zone.y].len() {
                     let mut id_set = &mut self.entity_zones[zone.y][zone.x];
@@ -44,7 +45,7 @@ impl EntityStates {
     }
 
     pub fn insert(&mut self, id: ProcessUniqueId, entity: Box<Entity>) {
-        if let Some(body) = entity.get_body() {
+        if let Some(body) = entity.components.get::<Collidable>() {
             let zone = EntityStates::get_zone(body.pos);
             while self.entity_zones.len() <= zone.y {
                 self.entity_zones.push(vec![]);
@@ -63,6 +64,10 @@ impl EntityStates {
 
     pub fn get(&self, key: &ProcessUniqueId) -> Option<&Box<Entity>> {
         self.entities.get(key)
+    }
+
+    pub fn get_mut(&mut self, key: &ProcessUniqueId) -> Option<&mut Box<Entity>> {
+        self.entities.get_mut(key)
     }
 
     pub fn for_each<F>(&self, mut f: F) where F : FnMut(&Box<Entity>) {

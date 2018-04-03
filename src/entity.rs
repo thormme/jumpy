@@ -1,10 +1,9 @@
 extern crate tiled;
 
+use std::any::TypeId;
 use component_states::ComponentStates;
 use sprite::Sprite;
 use entity_states::EntityStates;
-use collidable::Collidable;
-use damageable::Damageable;
 use piston_window::*;
 use app::{ButtonStates};
 use std::any::Any;
@@ -12,16 +11,6 @@ use std::collections::*;
 use std::cmp::Eq;
 use self::tiled::Map;
 use snowflake::ProcessUniqueId;
-
-pub trait Entity : AsAny {
-    fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool;
-    fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprite: &HashMap<String, Sprite>);
-    fn get_id(&self) -> ProcessUniqueId;
-    fn get_body(&self) -> Option<&Collidable> { None }
-    fn get_damageable(&mut self) -> Option<&mut Damageable> { None }
-    fn get_components(&self) -> &ComponentStates;
-    fn get_components_mut(&mut self) -> &mut ComponentStates;
-}
 
 impl PartialEq for Entity {
   fn eq(&self, other: &Entity) -> bool {
@@ -43,5 +32,57 @@ impl<T: Any> AsAny for T {
 
     fn as_any_mut(&mut self) -> &mut Any {
         self
+    }
+}
+
+#[derive(Debug)]
+pub struct Entity {
+    id: ProcessUniqueId,
+    pub components: ComponentStates,
+}
+
+impl Entity {
+    pub fn new(components: ComponentStates) -> Entity {
+        Entity {
+            id: ProcessUniqueId::new(),
+            components: components,
+        }
+    }
+
+    pub fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+        let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
+        for type_id in component_types {
+            let mut component_result = self.components.remove_component(type_id);
+            if let Some(mut component) = component_result {
+                if !component.update(self, args, keys, entities, &map) {
+                    self.components.insert_component(type_id, component);
+                }
+            }
+        }
+
+        false
+    }
+
+    pub fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
+        let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
+        for type_id in component_types {
+            let mut component_result = self.components.remove_component(type_id);
+            if let Some(mut component) = component_result {
+                component.draw(self, event, args, image, context, gl, sprites);
+                self.components.insert_component(type_id, component);
+            }
+        }
+    }
+
+    pub fn get_id(&self) -> ProcessUniqueId {
+        self.id
+    }
+
+    pub fn get_components(&self) -> &ComponentStates {
+        &self.components
+    }
+
+    pub fn get_components_mut(&mut self) -> &mut ComponentStates {
+        &mut self.components
     }
 }
