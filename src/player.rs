@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use component::DestroyType;
 use std::any::TypeId;
 use component_states::ComponentStates;
 use damageable::Damageable;
@@ -19,52 +20,69 @@ use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum FacingDirection {Left, Right}
 
 #[derive(Debug)]
 pub struct Player {
     jumping: bool,
     facing: FacingDirection,
-    animation: AnimationState,
 }
 
 impl Player {
-    pub fn new(animation: AnimationState) -> Player {
+    pub fn new() -> Player {
         Player {
             jumping: false,
             facing: FacingDirection::Right,
-            animation: animation,
         }
     }
 
-    pub fn new_entity(x: f32, y: f32, animation: AnimationState) -> Entity {
+    pub fn new_entity(x: f32, y: f32) -> Entity {
         let mut components = ComponentStates::new();
         components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
             Point2::new(0f32, 0f32), Point2::new(0f32, 48f32),
             Point2::new(31f32, 24f32), Point2::new(0f32, 24f32),
             Point2::new(31f32, 48f32), Point2::new(31f32, 0f32)
         ]));
-        components.insert(Player::new(animation));
+        components.insert(AnimationState::new("player".to_owned(), "run".to_owned(), Some(Self::get_draw_transform)));
+        components.insert(Player::new());
         Entity::new(components)
+    }
+
+    fn get_draw_transform(entity: &Entity, event: &Event, args: &RenderArgs, context: &Context, src_rect: &[f64; 4]) -> [[f64; 3]; 2] {
+        let facing = if let Some(player) = entity.components.get::<Player>() { player.facing.clone() } else { FacingDirection::Right };
+        if let Some(body) = entity.components.get::<Collidable>() {
+            let pos = &body.pos;
+            return match facing {
+                FacingDirection::Right => context.transform.trans(
+                        pos.x as f64 - 2f64,
+                        pos.y as f64,
+                    ),
+                FacingDirection::Left => context.transform.trans(
+                        pos.x as f64 + src_rect[2] - 1f64,
+                        pos.y as f64,
+                    ).flip_h(),
+            }
+        } else {
+            context.transform
+        }
     }
 }
 
 impl Component for Player {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+        let mut animation = "stand".to_string();
         if let Some(body) = entity.components.get_mut::<Collidable>() {
             body.speed.y += 0.5f32;
             body.speed.x *= 0.8f32;
             if keys.get_button_down(&Button::Keyboard(Key::Right)) {
-                self.animation.set_animation("run".to_owned());
+                animation = "run".to_string();
                 body.speed.x += 1f32;
                 self.facing = FacingDirection::Right;
             } else if keys.get_button_down(&Button::Keyboard(Key::Left)) {
-                self.animation.set_animation("run".to_owned());
+                animation = "run".to_string();
                 body.speed.x -= 1f32;
                 self.facing = FacingDirection::Left;
-            } else {
-                self.animation.set_animation("stand".to_owned());
             }
             if keys.get_button_down(&Button::Keyboard(Key::Up)) {
                 if body.grounded {
@@ -93,31 +111,16 @@ impl Component for Player {
             }
         }
 
+        if let Some(animation_state) = entity.components.get_mut::<AnimationState>() {
+            animation_state.set_animation(animation);
+        }
+
         entities.for_each(|entity| {
             if let Some(_player) = entity.components.get::<Player>() {
                 println!("{:?}", entity);
             }
         });
 
-        false
-    }
-
-    fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        if let Some(body) = entity.components.get::<Collidable>() {
-            let pos = &body.pos;
-            let facing = &self.facing;
-            self.animation.draw(args, image, context, gl, sprites, |src_rect| {
-                match facing {
-                    &FacingDirection::Right => context.transform.trans(
-                            pos.x as f64 - 2f64,
-                            pos.y as f64,
-                        ),
-                    &FacingDirection::Left => context.transform.trans(
-                            pos.x as f64 + src_rect[2] - 1f64,
-                            pos.y as f64,
-                        ).flip_h(),
-                }
-            });
-        }
+        DestroyType::None
     }
 }

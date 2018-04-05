@@ -113,9 +113,9 @@ impl App {
             app.sprites.insert("player".to_owned(), player_sprite);
             app.sprites.insert("enemy".to_owned(), enemy_sprite);
             app.sprites.insert("ball".to_owned(), ball_sprite);
-            let player = Player::new_entity(33.0, 5.0, AnimationState::new("player".to_owned(), "run".to_owned()));
+            let player = Player::new_entity(33.0, 5.0);
             app.tracking_entity = player.get_id();
-            let enemy = Enemy::new_entity(50.0, 50.0, "enemy".to_owned(), player.get_id());
+            let enemy = Enemy::new_entity(50.0, 50.0, player.get_id());
             app.entities.insert(player.get_id(), Box::new(player));
             app.entities.insert(enemy.get_id(), Box::new(enemy));
             let ball = Ball::new_entity(50.0, 100.0, 2.0, 0.0);

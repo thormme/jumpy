@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use component::DestroyType;
 use component::Component;
 use component_states::ComponentStates;
 use damageable::Damageable;
@@ -19,14 +20,12 @@ use snowflake::ProcessUniqueId;
 
 #[derive(Debug)]
 pub struct Ball {
-    animation: AnimationState,
     prev_speed: Vector2<f32>,
 }
 
 impl Ball {
     pub fn new(dx: f32, dy: f32) -> Ball {
         Ball {
-            animation: AnimationState::new("ball".to_string(), "still".to_string()),
             prev_speed: Vector2::new(dx, dy),
         }
     }
@@ -37,22 +36,22 @@ impl Ball {
             Point2::new(0f32, 1f32), Point2::new(0f32, 16f32),
             Point2::new(15f32, 16f32), Point2::new(15f32, 1f32)
         ]));
+        components.insert(AnimationState::new("ball".to_string(), "still".to_string(), None));
         components.insert(Ball::new(dx, dy));
         Entity::new(components)
     }
 }
 
 impl Component for Ball {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+        let mut bounce = false;
         if let Some(body) = entity.components.get_mut::<Collidable>() {
             body.speed -= self.prev_speed - body.speed;
 
             body.speed.y += 0.1f32;
             self.prev_speed = body.speed;
 
-            if body.grounded {
-                self.animation.set_animation("bounce".to_owned());
-            }
+            bounce = body.grounded;
 
             entities.for_zone(body.pos, 1, |entity| {
                 if entity.components.get::<Player>().is_some() {
@@ -64,19 +63,12 @@ impl Component for Ball {
                 }
             });
         }
-
-        false
-    }
-
-    fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        if let Some(body) = entity.components.get::<Collidable>() {
-            let pos = &body.pos;
-            self.animation.draw(args, image, context, gl, sprites, |_src_rect| {
-                context.transform.trans(
-                    pos.x as f64,
-                    pos.y as f64,
-                )
-            });
+        if bounce {
+            if let Some(animation) = entity.components.get_mut::<AnimationState>() {
+                animation.set_animation("bounce".to_owned());
+            }
         }
+
+        DestroyType::None
     }
 }

@@ -11,6 +11,7 @@ use std::collections::*;
 use std::cmp::Eq;
 use self::tiled::Map;
 use snowflake::ProcessUniqueId;
+use component::DestroyType;
 
 impl PartialEq for Entity {
   fn eq(&self, other: &Entity) -> bool {
@@ -54,8 +55,11 @@ impl Entity {
         for type_id in component_types {
             let mut component_result = self.components.remove_component(type_id);
             if let Some(mut component) = component_result {
-                if !component.update(self, args, keys, entities, &map) {
-                    self.components.insert_component(type_id, component);
+                let delete = component.update(self, args, keys, entities, &map);
+                match delete {
+                    DestroyType::Component => {},
+                    DestroyType::Entity => {return true;},
+                    DestroyType::None => {self.components.insert_component(type_id, component);}
                 }
             }
         }

@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use component::DestroyType;
 use component::Component;
 use component_states::ComponentStates;
 use damageable::Damageable;
@@ -14,30 +15,30 @@ use player::Player;
 use self::tiled::Map;
 use snowflake::ProcessUniqueId;
 use nalgebra::{Vector2, Point2};
+use sprite::AnimationState;
 
 #[derive(Debug)]
 pub struct Enemy {
-    sprite: String,
     player_id: ProcessUniqueId,
     health: u32,
 }
 
 impl Enemy {
-    pub fn new(sprite: String, player_id: ProcessUniqueId) -> Enemy {
+    pub fn new(player_id: ProcessUniqueId) -> Enemy {
         Enemy {
-            sprite: sprite,
             player_id: player_id,
             health: 1u32,
         }
     }
 
-    pub fn new_entity(x: f32, y: f32, sprite: String, player_id: ProcessUniqueId) -> Entity {
+    pub fn new_entity(x: f32, y: f32, player_id: ProcessUniqueId) -> Entity {
         let mut components = ComponentStates::new();
         components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
             Point2::new(0f32, 0f32), Point2::new(0f32, 32f32),
             Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
         ]));
-        components.insert(Enemy::new(sprite, player_id));
+        components.insert(AnimationState::new("enemy".to_string(), "stand".to_string(), None));
+        components.insert(Enemy::new(player_id));
         Entity::new(components)
     }
 }
@@ -53,7 +54,7 @@ impl Damageable for Enemy {
 }
 
 impl Component for Enemy {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
         if let Some(player) = entities.get_mut(&self.player_id) {
             if player.components.get::<Player>().is_some() {
                 if let Some(other_body) = player.components.get_mut::<Collidable>() {
@@ -67,31 +68,9 @@ impl Component for Enemy {
             }
         }
         if self.health == 0u32 {
-            return true;
+            return DestroyType::Entity;
         }
 
-        false
-    }
-    fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        if let Some(body) = entity.components.get::<Collidable>() {
-            let src_rect = [
-                0f64,
-                0f64,
-                32f64,
-                32f64,
-            ];
-
-            let trans = context.transform.trans(
-                body.pos.x as f64,
-                body.pos.y as f64,
-            );
-
-            image.src_rect(src_rect).draw(
-                &sprites.get(&self.sprite).unwrap().texture,
-                &DrawState::default(),
-                trans,
-                gl,
-            );
-        }
+        DestroyType::None
     }
 }

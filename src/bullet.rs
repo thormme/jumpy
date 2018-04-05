@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use component::DestroyType;
 use enemy::Enemy;
 use component::Component;
 use component_states::ComponentStates;
@@ -26,7 +27,7 @@ pub struct Bullet {
 impl Bullet {
     pub fn new() -> Self {
         Bullet {
-            animation: AnimationState::new("ball".to_string(), "still".to_string()),
+            animation: AnimationState::new("ball".to_string(), "still".to_string(), None),
         }
     }
 
@@ -42,8 +43,8 @@ impl Bullet {
 }
 
 impl Component for Bullet {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
-        let mut destroy = false;
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+        let mut destroy = DestroyType::None;
         if let Some(body) = entity.components.get_mut::<Collidable>() {
 
             entities.for_zone(body.pos, 1, |colliding_entity| {
@@ -57,7 +58,7 @@ impl Component for Bullet {
                     //if let Some(damageable) = colliding_entity.get_damageable() {
                     if let Some(enemy) = colliding_entity.components.get_mut::<Enemy>() {
                         enemy.set_health(0);
-                        destroy = true;
+                        destroy = DestroyType::Entity;
                     }
                 }
             });

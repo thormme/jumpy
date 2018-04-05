@@ -1,4 +1,10 @@
 
+use collidable::Collidable;
+use std::*;
+use player::Player;
+use std::fmt::Debug;
+use entity::Entity;
+use component::Component;
 use piston_window::G2d;
 use piston_window::*;
 use piston::input::RenderArgs;
@@ -80,21 +86,40 @@ impl Frame {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct AnimationState {
     pub sprite_name: String,
     pub animation_name: String,
     pub frame: usize,
     frame_time: f64,
+    transform_generator: fn(&Entity, &Event, &RenderArgs, &Context, &[f64; 4]) -> [[f64; 3]; 2],
 }
 
+impl Debug for AnimationState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "AnimationState {{ sprite_name: {}, animation_name: {}, frame: {}, frame_time: {} }}",
+            self.sprite_name, self.animation_name, self.frame, self.frame_time)
+    }
+}
+
+type TranforGenerator = fn(&Entity, &Event, &RenderArgs, &Context, &[f64; 4]) -> [[f64; 3]; 2];
+
 impl AnimationState {
-    pub fn new(sprite_name: String, animation_name: String) -> AnimationState {
+    pub fn new(sprite_name: String, animation_name: String, transform_generator: Option<TranforGenerator>) -> AnimationState {
         AnimationState {
             sprite_name: sprite_name,
             animation_name: animation_name,
             frame: 0usize,
             frame_time: 0f64,
+            transform_generator: transform_generator.unwrap_or(Self::get_draw_transform)
+        }
+    }
+
+    fn get_draw_transform(entity: &Entity, event: &Event, args: &RenderArgs, context: &Context, src_rect: &[f64; 4]) -> [[f64; 3]; 2] {
+        if let Some(body) = entity.components.get::<Collidable>() {
+            context.transform.trans(body.pos.x as f64, body.pos.y as f64)
+        } else {
+            context.transform
         }
     }
 
@@ -138,6 +163,22 @@ impl AnimationState {
             &sprite.texture,
             &DrawState::default(),
             trans(&src_rect),
+            gl,
+        );
+    }
+}
+
+impl Component for AnimationState {
+    fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
+        self.advance(1f64/60f64, sprites);
+        let sprite = sprites.get(&self.sprite_name).unwrap();
+        let animation = &sprite.sprite_data.animations.get(&self.animation_name).unwrap();
+        let src_rect = sprite.sprite_data.frames.get(&animation.frames[self.frame].name).unwrap().frame.as_rect();
+
+        image.src_rect(src_rect).draw(
+            &sprite.texture,
+            &DrawState::default(),
+            (self.transform_generator)(entity, event, args, context, &src_rect),
             gl,
         );
     }

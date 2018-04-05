@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use component::DestroyType;
 use entity_states::EntityStates;
 use app::ButtonStates;
 use piston_window::UpdateArgs;
@@ -21,12 +22,12 @@ pub struct Collidable {
 }
 
 impl Component for Collidable {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
         let prev_pos = self.prev_pos;
         self.pos += self.speed;
         self.handle_collisions(map, &prev_pos);
         self.prev_pos = self.pos;
-        false
+        DestroyType::None
     }
 }
 

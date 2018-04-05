@@ -14,7 +14,9 @@ use entity_states::EntityStates;
 use app::ButtonStates;
 use piston::input::UpdateArgs;
 
+pub enum DestroyType { Component, Entity, None}
+
 pub trait Component : AsAny + Debug {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {false}
+    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType { DestroyType::None }
     fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {}
 }
