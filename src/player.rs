@@ -19,6 +19,7 @@ use component::Component;
 use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
+use component_states::ComponentHashMap;
 
 #[derive(Debug, Clone)]
 enum FacingDirection {Left, Right}
@@ -39,19 +40,19 @@ impl Player {
 
     pub fn new_entity(x: f32, y: f32) -> Entity {
         let mut components = ComponentStates::new();
-        components.insert(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
+        components.insert_component(Collidable::new(Point2::new(x, y), Vector2::new(0f32, 0f32), vec![
             Point2::new(0f32, 0f32), Point2::new(0f32, 48f32),
             Point2::new(31f32, 24f32), Point2::new(0f32, 24f32),
             Point2::new(31f32, 48f32), Point2::new(31f32, 0f32)
         ]));
-        components.insert(AnimationState::new("player".to_owned(), "run".to_owned(), Some(Self::get_draw_transform)));
-        components.insert(Player::new());
+        components.insert_component(AnimationState::new("player".to_owned(), "run".to_owned(), Some(Self::get_draw_transform)));
+        components.insert_component(Player::new());
         Entity::new(components)
     }
 
     fn get_draw_transform(entity: &Entity, event: &Event, args: &RenderArgs, context: &Context, src_rect: &[f64; 4]) -> [[f64; 3]; 2] {
-        let facing = if let Some(player) = entity.components.get::<Player>() { player.facing.clone() } else { FacingDirection::Right };
-        if let Some(body) = entity.components.get::<Collidable>() {
+        let facing = if let Some(player) = entity.components.get_component::<Player>() { player.facing.clone() } else { FacingDirection::Right };
+        if let Some(body) = entity.components.get_component::<Collidable>() {
             let pos = &body.pos;
             return match facing {
                 FacingDirection::Right => context.transform.trans(
@@ -72,7 +73,7 @@ impl Player {
 impl Component for Player {
     fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
         let mut animation = "stand".to_string();
-        if let Some(body) = entity.components.get_mut::<Collidable>() {
+        if let Some(body) = entity.components.get_mut_component::<Collidable>() {
             body.speed.y += 0.5f32;
             body.speed.x *= 0.8f32;
             if keys.get_button_down(&Button::Keyboard(Key::Right)) {
@@ -111,12 +112,12 @@ impl Component for Player {
             }
         }
 
-        if let Some(animation_state) = entity.components.get_mut::<AnimationState>() {
+        if let Some(animation_state) = entity.components.get_mut_component::<AnimationState>() {
             animation_state.set_animation(animation);
         }
 
         entities.for_each(|entity| {
-            if let Some(_player) = entity.components.get::<Player>() {
+            if let Some(_player) = entity.components.get_component::<Player>() {
                 println!("{:?}", entity);
             }
         });

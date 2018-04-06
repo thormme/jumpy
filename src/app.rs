@@ -25,6 +25,7 @@ use snowflake::ProcessUniqueId;
 use sprite::AnimationState;
 use std::path::Path;
 use component_states::ComponentStates;
+use component_states::ComponentHashMap;
 
 /*pub trait CollidableGrid {
     fn get_
@@ -181,7 +182,7 @@ impl App {
 
     pub fn update(&mut self, args: &UpdateArgs) {
         if let Some(tracking_entity) = self.entities.get(&self.tracking_entity) {
-            if let Some(body) = tracking_entity.get_components().get::<Collidable>() {
+            if let Some(body) = tracking_entity.get_components().get_component::<Collidable>() {
                 if (body.pos.x as f64) > self.viewport[0] + self.viewport[2] * 0.60f64 {
                     let offset = body.pos.x as f64 - (self.viewport[0] + self.viewport[2] * 0.60f64);
                     self.viewport[0] += offset * 0.1f64;

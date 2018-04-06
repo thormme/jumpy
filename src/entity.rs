@@ -53,13 +53,13 @@ impl Entity {
     pub fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
         let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
         for type_id in component_types {
-            let mut component_result = self.components.remove_component(type_id);
+            let mut component_result = self.components.remove(&type_id);
             if let Some(mut component) = component_result {
                 let delete = component.update(self, args, keys, entities, &map);
                 match delete {
                     DestroyType::Component => {},
                     DestroyType::Entity => {return true;},
-                    DestroyType::None => {self.components.insert_component(type_id, component);}
+                    DestroyType::None => {self.components.insert(type_id, component);}
                 }
             }
         }
@@ -70,10 +70,10 @@ impl Entity {
     pub fn draw(&mut self, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
         let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
         for type_id in component_types {
-            let mut component_result = self.components.remove_component(type_id);
+            let mut component_result = self.components.remove(&type_id);
             if let Some(mut component) = component_result {
                 component.draw(self, event, args, image, context, gl, sprites);
-                self.components.insert_component(type_id, component);
+                self.components.insert(type_id, component);
             }
         }
     }

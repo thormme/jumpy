@@ -5,6 +5,7 @@ extern crate snowflake;
 extern crate evmap;
 extern crate nalgebra;
 extern crate tiled;
+extern crate splitmut;
 
 #[macro_use]
 extern crate serde_derive;

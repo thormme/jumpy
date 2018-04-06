@@ -1,4 +1,6 @@
 
+use splitmut::GetMuts;
+use std::marker::PhantomData;
 use std::any::Any;
 use component::Component;
 use std::any::TypeId;
@@ -8,21 +10,23 @@ use nalgebra::Point2;
 use std::collections::HashMap;
 use entity::Entity;
 use snowflake::ProcessUniqueId;
+use splitmut::{SplitMut, SplitMutError};
 
-#[derive(Debug)]
-pub struct ComponentStates {
-    components: HashMap<TypeId, Box<Component>>,
+pub type ComponentStates = HashMap<TypeId, Box<Component>>;
+
+pub trait ComponentHashMap {
+    fn remove_component<T: 'static +  Component>(&mut self) -> Option<T>;
+
+    fn insert_component<T: 'static +  Component>(&mut self, component: T);
+
+    fn get_component<T: 'static +  Component>(&self) -> Option<&T>;
+
+    fn get_mut_component<T: 'static +  Component>(&mut self) -> Option<&mut T>;
 }
 
-impl ComponentStates {
-    pub fn new() -> ComponentStates {
-        ComponentStates {
-            components: HashMap::new(),
-        }
-    }
-
-    pub fn remove<T: 'static +  Component>(&mut self) -> Option<T> {
-        if let Some(component) = self.components.remove(&TypeId::of::<T>()) {
+impl ComponentHashMap for ComponentStates {
+    fn remove_component<T: 'static +  Component>(&mut self) -> Option<T> {
+        if let Some(component) = self.remove(&TypeId::of::<T>()) {
             let any_component: Box<Any> = Box::new(component);
             if let Ok(component_type) = any_component.downcast::<T>() {
                 return Some(*component_type);
@@ -31,27 +35,12 @@ impl ComponentStates {
         None
     }
 
-    pub fn remove_component(&mut self, type_id: TypeId) -> Option<Box<Component>> {
-        if let Some(component) = self.components.remove(&type_id) {
-            return Some(component);
-        }
-        None
+    fn insert_component<T: 'static +  Component>(&mut self, component: T) {
+        self.insert(TypeId::of::<T>(), Box::new(component));
     }
 
-    pub fn insert<T: 'static +  Component>(&mut self, component: T) {
-        self.components.insert(TypeId::of::<T>(), Box::new(component));
-    }
-
-    pub fn insert_component(&mut self, type_id: TypeId, component: Box<Component>) {
-        self.components.insert(type_id, component);
-    }
-
-    pub fn keys(&self) -> Keys<TypeId, Box<Component>> {
-        self.components.keys()
-    }
-
-    pub fn get<T: 'static +  Component>(&self) -> Option<&T> {
-        if let Some(component) = self.components.get(&TypeId::of::<T>()) {
+    fn get_component<T: 'static +  Component>(&self) -> Option<&T> {
+        if let Some(component) = self.get(&TypeId::of::<T>()) {
             if let Some(component_type) = component.as_any().downcast_ref::<T>() {
                 return Some(component_type);
             }
@@ -59,8 +48,24 @@ impl ComponentStates {
         None
     }
 
-    pub fn get_mut<T: 'static +  Component>(&mut self) -> Option<&mut T> {
-        if let Some(component) = self.components.get_mut(&TypeId::of::<T>()) {
+    fn get_mut_component<T: 'static +  Component>(&mut self) -> Option<&mut T> {
+        //let m = self.components.get_muts();
+        if let Some(component) = self.get_mut(&TypeId::of::<T>()) {
+            if let Some(component_type) = component.as_any_mut().downcast_mut::<T>() {
+                return Some(component_type);
+            }
+        }
+        None
+    }
+}
+
+pub trait MapByTypeId<'a> {
+    fn get_mut<T: 'static + Component>(&mut self) -> Option<&'a mut T>;
+}
+
+impl<'a> MapByTypeId<'a> for GetMuts<'a, &'a TypeId, Box<Component>, HashMap<TypeId, Box<Component>>> {
+    fn get_mut<T: 'static + Component>(&mut self) -> Option<&'a mut T> {
+        if let Ok(component) = self.at(&TypeId::of::<T>()) {
             if let Some(component_type) = component.as_any_mut().downcast_mut::<T>() {
                 return Some(component_type);
             }

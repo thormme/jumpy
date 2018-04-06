@@ -17,6 +17,9 @@ use player::Player;
 use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
+use component_states::{ ComponentHashMap, MapByTypeId };
+use splitmut::SplitMut;
+use std::any::TypeId;
 
 #[derive(Debug)]
 pub struct Ball {
@@ -32,12 +35,12 @@ impl Ball {
 
     pub fn new_entity(x: f32, y: f32, dx: f32, dy: f32) -> Entity {
         let mut components = ComponentStates::new();
-        components.insert(Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
+        components.insert_component(Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
             Point2::new(0f32, 1f32), Point2::new(0f32, 16f32),
             Point2::new(15f32, 16f32), Point2::new(15f32, 1f32)
         ]));
-        components.insert(AnimationState::new("ball".to_string(), "still".to_string(), None));
-        components.insert(Ball::new(dx, dy));
+        components.insert_component(AnimationState::new("ball".to_string(), "still".to_string(), None));
+        components.insert_component(Ball::new(dx, dy));
         Entity::new(components)
     }
 }
@@ -45,28 +48,28 @@ impl Ball {
 impl Component for Ball {
     fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
         let mut bounce = false;
-        if let Some(body) = entity.components.get_mut::<Collidable>() {
+        let mut components = entity.components.get_muts();
+        if let Some(body) = components.get_mut::<Collidable>() {
             body.speed -= self.prev_speed - body.speed;
 
             body.speed.y += 0.1f32;
             self.prev_speed = body.speed;
 
-            bounce = body.grounded;
+            if body.grounded {
+                if let Some(animation) = components.get_mut::<AnimationState>() {
+                    animation.set_animation("bounce".to_owned());
+                }
+            }
 
             entities.for_zone(body.pos, 1, |entity| {
-                if entity.components.get::<Player>().is_some() {
-                    if let Some(body) = entity.components.get_mut::<Collidable>() {
+                if entity.components.get_component::<Player>().is_some() {
+                    /*if let Some(body) = components.get_mut::<Collidable>() {
                         if body.is_colliding(&body) {
                             //self.animation.set_sprite("player".to_owned(), "run".to_owned());
                         }
-                    }
+                    }*/
                 }
             });
-        }
-        if bounce {
-            if let Some(animation) = entity.components.get_mut::<AnimationState>() {
-                animation.set_animation("bounce".to_owned());
-            }
         }
 
         DestroyType::None

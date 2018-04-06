@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use serde_json;
 use std::fs::File;
+use component_states::ComponentHashMap;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AnimationFrame {
@@ -116,7 +117,7 @@ impl AnimationState {
     }
 
     fn get_draw_transform(entity: &Entity, event: &Event, args: &RenderArgs, context: &Context, src_rect: &[f64; 4]) -> [[f64; 3]; 2] {
-        if let Some(body) = entity.components.get::<Collidable>() {
+        if let Some(body) = entity.components.get_component::<Collidable>() {
             context.transform.trans(body.pos.x as f64, body.pos.y as f64)
         } else {
             context.transform

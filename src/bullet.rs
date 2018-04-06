@@ -18,6 +18,7 @@ use player::Player;
 use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
+use component_states::ComponentHashMap;
 
 #[derive(Debug)]
 pub struct Bullet {
@@ -33,11 +34,11 @@ impl Bullet {
 
     pub fn new_entity(x: f32, y: f32, dx: f32, dy: f32) -> Entity {
         let mut components = ComponentStates::new();
-        components.insert(Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
+        components.insert_component(Collidable::new(Point2::new(x, y), Vector2::new(dx, dy), vec![
             Point2::new(0f32, 1f32), Point2::new(0f32, 16f32),
             Point2::new(15f32, 16f32), Point2::new(15f32, 1f32)
         ]));
-        components.insert(Bullet::new());
+        components.insert_component(Bullet::new());
         Entity::new(components)
     }
 }
@@ -45,18 +46,18 @@ impl Bullet {
 impl Component for Bullet {
     fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
         let mut destroy = DestroyType::None;
-        if let Some(body) = entity.components.get_mut::<Collidable>() {
+        if let Some(body) = entity.components.get_mut_component::<Collidable>() {
 
             entities.for_zone(body.pos, 1, |colliding_entity| {
                 let mut colliding = false;
-                if let Some(other_body) = colliding_entity.components.get::<Collidable>() {
+                if let Some(other_body) = colliding_entity.components.get_component::<Collidable>() {
                     if other_body.is_colliding(&body) {
                         colliding = true;
                     }
                 }
                 if colliding {
                     //if let Some(damageable) = colliding_entity.get_damageable() {
-                    if let Some(enemy) = colliding_entity.components.get_mut::<Enemy>() {
+                    if let Some(enemy) = colliding_entity.components.get_mut_component::<Enemy>() {
                         enemy.set_health(0);
                         destroy = DestroyType::Entity;
                     }
@@ -68,7 +69,7 @@ impl Component for Bullet {
     }
 
     fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
-        if let Some(body) = entity.components.get::<Collidable>() {
+        if let Some(body) = entity.components.get_component::<Collidable>() {
             let pos = &body.pos;
             self.animation.draw(args, image, context, gl, sprites, |_src_rect| {
                 context.transform.trans(

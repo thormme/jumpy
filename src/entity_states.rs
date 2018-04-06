@@ -6,6 +6,7 @@ use nalgebra::Point2;
 use std::collections::HashMap;
 use entity::Entity;
 use snowflake::ProcessUniqueId;
+use component_states::ComponentHashMap;
 
 const ZONE_WIDTH: usize = 50;
 const ZONE_HEIGHT: usize = 50;
@@ -31,7 +32,7 @@ impl EntityStates {
 
     pub fn remove(&mut self, id: &ProcessUniqueId) -> Option<Box<Entity>> {
         if let Some(entity) = self.entities.remove(id) {
-            if let Some(body) = entity.components.get::<Collidable>() {
+            if let Some(body) = entity.components.get_component::<Collidable>() {
                 let zone = EntityStates::get_zone(body.pos);
                 if zone.y < self.entity_zones.len() && zone.x < self.entity_zones[zone.y].len() {
                     let mut id_set = &mut self.entity_zones[zone.y][zone.x];
@@ -45,7 +46,7 @@ impl EntityStates {
     }
 
     pub fn insert(&mut self, id: ProcessUniqueId, entity: Box<Entity>) {
-        if let Some(body) = entity.components.get::<Collidable>() {
+        if let Some(body) = entity.components.get_component::<Collidable>() {
             let zone = EntityStates::get_zone(body.pos);
             while self.entity_zones.len() <= zone.y {
                 self.entity_zones.push(vec![]);
