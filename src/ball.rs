@@ -47,7 +47,6 @@ impl Ball {
 
 impl Component for Ball {
     fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
-        let mut bounce = false;
         let mut components = entity.components.get_muts();
         if let Some(body) = components.get_mut::<Collidable>() {
             body.speed -= self.prev_speed - body.speed;

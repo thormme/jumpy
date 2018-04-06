@@ -21,14 +21,12 @@ use component_states::ComponentHashMap;
 #[derive(Debug)]
 pub struct Enemy {
     player_id: ProcessUniqueId,
-    health: u32,
 }
 
 impl Enemy {
     pub fn new(player_id: ProcessUniqueId) -> Enemy {
         Enemy {
             player_id: player_id,
-            health: 1u32,
         }
     }
 
@@ -39,18 +37,9 @@ impl Enemy {
             Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
         ]));
         components.insert_component(AnimationState::new("enemy".to_string(), "stand".to_string(), None));
+        components.insert_component(Damageable::new(1u32, 0f64));
         components.insert_component(Enemy::new(player_id));
         Entity::new(components)
-    }
-}
-
-impl Damageable for Enemy {
-    fn get_health(&self) -> u32 {
-        self.health
-    }
-    fn set_health(&mut self, health: u32) -> u32 {
-        self.health = health;
-        self.health
     }
 }
 
@@ -68,8 +57,11 @@ impl Component for Enemy {
                 }
             }
         }
-        if self.health == 0u32 {
-            return DestroyType::Entity;
+        if let Some(damage) = entity.components.get_mut_component::<Damageable>() {
+            if damage.get_health() == 0u32 {
+                return DestroyType::Entity;
+            }
+            damage.clear_events();
         }
 
         DestroyType::None

@@ -46,8 +46,8 @@ impl Bullet {
 impl Component for Bullet {
     fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
         let mut destroy = DestroyType::None;
+        let entity_id = entity.get_id();
         if let Some(body) = entity.components.get_mut_component::<Collidable>() {
-
             entities.for_zone(body.pos, 1, |colliding_entity| {
                 let mut colliding = false;
                 if let Some(other_body) = colliding_entity.components.get_component::<Collidable>() {
@@ -56,9 +56,8 @@ impl Component for Bullet {
                     }
                 }
                 if colliding {
-                    //if let Some(damageable) = colliding_entity.get_damageable() {
-                    if let Some(enemy) = colliding_entity.components.get_mut_component::<Enemy>() {
-                        enemy.set_health(0);
+                    if let Some(damageable) = colliding_entity.components.get_mut_component::<Damageable>() {
+                        damageable.set_health(0, entity_id);
                         destroy = DestroyType::Entity;
                     }
                 }
