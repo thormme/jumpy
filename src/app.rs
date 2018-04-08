@@ -4,6 +4,9 @@ extern crate graphics;
 extern crate std;
 extern crate snowflake;
 extern crate evmap;
+use damageable::DamageEvent;
+use update_event;
+use std::any::TypeId;
 use collidable::Collidable;
 use sprite::Sprite;
 use entity_states::EntityStates;
@@ -26,6 +29,7 @@ use sprite::AnimationState;
 use std::path::Path;
 use component_states::ComponentStates;
 use component_states::ComponentHashMap;
+use event;
 
 /*pub trait CollidableGrid {
     fn get_
@@ -45,6 +49,33 @@ impl ButtonStates for HashMap<Button, bool> {
     }
 }
 
+pub type EventMap = HashMap<u32, HashMap<ProcessUniqueId, Vec<event::Event>>>;
+
+pub trait EventState {
+    fn add(&mut self, event: event::Event);
+}
+
+impl EventState for EventMap {
+    fn add(&mut self, event: event::Event) {
+       if let Some(type_map) = self.get_mut(&event.event_data.get_priority()) {
+           if let Some(events) = type_map.get_mut(&event.entity) {
+               events.push(event);
+               return;
+           }
+           let entity = event.entity;
+           let events = vec![event];
+           type_map.insert(entity, events);
+           return;
+       }
+       let mut type_map = HashMap::new();
+       let priority = event.event_data.get_priority();
+       let entity = event.entity;
+       let events = vec![event];
+       type_map.insert(entity, events);
+       self.insert(priority, type_map);
+   }
+}
+
 pub struct App {
     pub window: PistonWindow<Sdl2Window>, // OpenGL drawing backend.
     map: self::tiled::Map,
@@ -54,7 +85,8 @@ pub struct App {
     keys: HashMap<Button, bool>,
     sprites: HashMap<String, Sprite>,
     viewport: [f64; 4],
-    tracking_entity: ProcessUniqueId
+    tracking_entity: ProcessUniqueId,
+    events: EventMap,
 }
 
 impl App {
@@ -102,7 +134,8 @@ impl App {
                 keys: HashMap::new(),
                 sprites: HashMap::new(),
                 viewport: [0f64, 0f64, 1024f64, 860f64],
-                tracking_entity: ProcessUniqueId::new()
+                tracking_entity: ProcessUniqueId::new(),
+                events: HashMap::new(),
             };
 
             let player_sprite_path = assets.join("player.json");
@@ -206,10 +239,30 @@ impl App {
         let keys = &self.keys;
         let entity_ids: Vec<ProcessUniqueId> = self.entities.keys().cloned().collect();
         for id in entity_ids {
-            let mut entity_result = self.entities.remove(&id);
-            if let Some(mut entity) = entity_result {
-                if !entity.update(args, keys, &mut self.entities, &map) {
-                    self.entities.insert(id, entity);
+            self.events.add(event::Event::new(update_event::UpdateEvent{args: args.clone()}, id, None));
+        }
+        let event_order: Vec<u32> = self.events.keys().cloned().collect();
+        for priority in event_order {
+            let mut entity_ids: Vec<ProcessUniqueId> = Vec::new();
+            if let Some(entity_map) = self.events.get(&priority) {
+                 entity_ids = entity_map.keys().cloned().collect();
+            }
+
+            for id in entity_ids {
+                if let Some(events) = self.events.get_mut(&priority).unwrap().remove(&id) {
+                    let mut entity_result = self.entities.remove(&id);
+                    if let Some(mut entity) = entity_result {
+                        let mut destroy = false;
+                        for event in events {
+                            if entity.handle_event(event, args, keys, &mut self.entities, &map, &mut self.events) {
+                                destroy = true;
+                                break;
+                            }
+                        }
+                        if !destroy {
+                            self.entities.insert(id, entity);
+                        }
+                    }
                 }
             }
         }

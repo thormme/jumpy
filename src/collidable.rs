@@ -1,6 +1,9 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use app::EventMap;
+use std::collections::HashMap;
+use std::any::TypeId;
 use component::DestroyType;
 use entity_states::EntityStates;
 use app::ButtonStates;
@@ -10,6 +13,8 @@ use component::Component;
 use piston_window::Event;
 use self::tiled::{Map, PropertyValue, Tile};
 use self::nalgebra::{Vector2, Point2, Similarity2};
+use update_event;
+use event;
 
 #[derive(Debug)]
 pub struct Collidable {
@@ -22,12 +27,12 @@ pub struct Collidable {
 }
 
 impl Component for Collidable {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
-        let prev_pos = self.prev_pos;
-        self.pos += self.speed;
-        self.handle_collisions(map, &prev_pos);
-        self.prev_pos = self.pos;
-        DestroyType::None
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        if event_type == TypeId::of::<update_event::UpdateEvent>() {
+            self.update(event, entity, keys, entities, map, events)
+        } else {
+            DestroyType::None
+        }
     }
 }
 
@@ -57,6 +62,14 @@ impl Collidable {
             grounded: false,
             prev_pos: pos,
         }
+    }
+
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        let prev_pos = self.prev_pos;
+        self.pos += self.speed;
+        self.handle_collisions(map, &prev_pos);
+        self.prev_pos = self.pos;
+        DestroyType::None
     }
 
     fn correct_collision(pos: &Point2<f32>, walls: &Vec<(Point2<f32>, Point2<f32>)>, transform: &Similarity2<f32>, point: &Point2<f32>, movement: &Vector2<f32>) -> Option<(Point2<f32>, f32)> {

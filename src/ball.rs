@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use app::EventMap;
 use component::DestroyType;
 use component::Component;
 use component_states::ComponentStates;
@@ -20,6 +21,8 @@ use snowflake::ProcessUniqueId;
 use component_states::{ ComponentHashMap, MapByTypeId };
 use splitmut::SplitMut;
 use std::any::TypeId;
+use event;
+use update_event;
 
 #[derive(Debug)]
 pub struct Ball {
@@ -43,10 +46,8 @@ impl Ball {
         components.insert_component(Ball::new(dx, dy));
         Entity::new(components)
     }
-}
 
-impl Component for Ball {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
         let mut components = entity.components.get_muts();
         if let Some(body) = components.get_mut::<Collidable>() {
             body.speed -= self.prev_speed - body.speed;
@@ -72,5 +73,15 @@ impl Component for Ball {
         }
 
         DestroyType::None
+    }
+}
+
+impl Component for Ball {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        if event_type == TypeId::of::<update_event::UpdateEvent>() {
+            self.update(event, entity, keys, entities, map, events)
+        } else {
+            DestroyType::None
+        }
     }
 }

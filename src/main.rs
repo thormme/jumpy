@@ -1,3 +1,6 @@
+#![feature(clone_closures)]
+#![feature(core_intrinsics)]
+
 extern crate piston;
 extern crate opengl_graphics;
 extern crate piston_window;
@@ -27,6 +30,8 @@ mod damageable;
 mod bullet;
 mod component;
 mod component_states;
+mod event;
+mod update_event;
 
 extern crate sdl2_window;
 

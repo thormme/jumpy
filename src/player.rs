@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use app::EventMap;
 use component::DestroyType;
 use std::any::TypeId;
 use component_states::ComponentStates;
@@ -20,6 +21,8 @@ use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
 use component_states::ComponentHashMap;
+use update_event;
+use event;
 
 #[derive(Debug, Clone)]
 enum FacingDirection {Left, Right}
@@ -32,6 +35,7 @@ pub struct Player {
 
 impl Player {
     pub fn new() -> Player {
+
         Player {
             jumping: false,
             facing: FacingDirection::Right,
@@ -68,10 +72,8 @@ impl Player {
             context.transform
         }
     }
-}
 
-impl Component for Player {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
         let mut animation = "stand".to_string();
         if let Some(body) = entity.components.get_mut_component::<Collidable>() {
             body.speed.y += 0.5f32;
@@ -123,5 +125,15 @@ impl Component for Player {
         });
 
         DestroyType::None
+    }
+}
+
+impl Component for Player {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        if event_type == TypeId::of::<update_event::UpdateEvent>() {
+            self.update(event, entity, keys, entities, map, events)
+        } else {
+            DestroyType::None
+        }
     }
 }

@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use app::EventMap;
 use std::any::TypeId;
 use component_states::ComponentStates;
 use sprite::Sprite;
@@ -12,6 +13,7 @@ use std::cmp::Eq;
 use self::tiled::Map;
 use snowflake::ProcessUniqueId;
 use component::DestroyType;
+use event;
 
 impl PartialEq for Entity {
   fn eq(&self, other: &Entity) -> bool {
@@ -50,16 +52,19 @@ impl Entity {
         }
     }
 
-    pub fn update(&mut self, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> bool {
-        let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
-        for type_id in component_types {
-            let mut component_result = self.components.remove(&type_id);
-            if let Some(mut component) = component_result {
-                let delete = component.update(self, args, keys, entities, &map);
-                match delete {
-                    DestroyType::Component => {},
-                    DestroyType::Entity => {return true;},
-                    DestroyType::None => {self.components.insert(type_id, component);}
+    pub fn handle_event(&mut self, event: event::Event, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> bool {
+        if event.component_type.is_none() {
+            let component_types: Vec<TypeId> = self.components.keys().cloned().collect();
+            for type_id in component_types {
+                let mut component_result = self.components.remove(&type_id);
+                if let Some(mut component) = component_result {
+                    let delete = component.handle_event(event.event_type, &event, self, keys, entities, map, events);
+
+                    match delete {
+                        DestroyType::Component => {},
+                        DestroyType::Entity => {return true;},
+                        DestroyType::None => {self.components.insert(type_id, component);}
+                    }
                 }
             }
         }

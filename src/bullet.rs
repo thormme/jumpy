@@ -1,6 +1,8 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use app::EventMap;
+use std::any::TypeId;
 use component::DestroyType;
 use enemy::Enemy;
 use component::Component;
@@ -19,6 +21,8 @@ use self::tiled::{Map};
 use self::nalgebra::{Vector2, Point2};
 use snowflake::ProcessUniqueId;
 use component_states::ComponentHashMap;
+use update_event;
+use event;
 
 #[derive(Debug)]
 pub struct Bullet {
@@ -41,10 +45,8 @@ impl Bullet {
         components.insert_component(Bullet::new());
         Entity::new(components)
     }
-}
 
-impl Component for Bullet {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
         let mut destroy = DestroyType::None;
         let entity_id = entity.get_id();
         if let Some(body) = entity.components.get_mut_component::<Collidable>() {
@@ -56,8 +58,9 @@ impl Component for Bullet {
                     }
                 }
                 if colliding {
+                    let colliding_id = colliding_entity.get_id();
                     if let Some(damageable) = colliding_entity.components.get_mut_component::<Damageable>() {
-                        damageable.set_health(0, entity_id);
+                        damageable.set_health(0, entity_id, colliding_id, events);
                         destroy = DestroyType::Entity;
                     }
                 }
@@ -66,7 +69,9 @@ impl Component for Bullet {
 
         destroy
     }
+}
 
+impl Component for Bullet {
     fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {
         if let Some(body) = entity.components.get_component::<Collidable>() {
             let pos = &body.pos;
@@ -76,6 +81,14 @@ impl Component for Bullet {
                     pos.y as f64,
                 )
             });
+        }
+    }
+
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        if event_type == TypeId::of::<update_event::UpdateEvent>() {
+            self.update(event, entity, keys, entities, map, events)
+        } else {
+            DestroyType::None
         }
     }
 }

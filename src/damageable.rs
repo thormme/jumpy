@@ -1,3 +1,8 @@
+use event::EventData;
+use event::Event;
+use app::{EventMap, EventState};
+use std::any::TypeId;
+use std::collections::HashMap;
 use component::DestroyType;
 use entity_states::EntityStates;
 use app::ButtonStates;
@@ -6,29 +11,35 @@ use entity::Entity;
 use component::Component;
 use snowflake::ProcessUniqueId;
 use tiled::Map;
+use update_event;
+use event;
 
 #[derive(Debug)]
 pub struct Damageable {
     health: u32,
     invulnerable_default: f64,
     invulnerable_timer: f64,
-    events: Vec<DamageEvent>,
 }
 
 #[derive(Debug)]
-struct DamageEvent {
-    entity_id: ProcessUniqueId,
-    amount: i32,
+pub struct DamageEvent {
+    pub entity_id: ProcessUniqueId,
+    pub amount: i32,
+}
+
+impl EventData for DamageEvent {
+    fn get_priority(&self) -> u32 {
+        50u32
+    }
 }
 
 impl Component for Damageable {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
-        if self.invulnerable_timer > args.dt {
-            self.invulnerable_timer -= args.dt;
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        if event_type == TypeId::of::<update_event::UpdateEvent>() {
+            self.update(event, entity, keys, entities, map, events)
         } else {
-            self.invulnerable_timer = 0f64;
+            DestroyType::None
         }
-        DestroyType::None
     }
 }
 
@@ -38,7 +49,6 @@ impl Damageable {
             health: health,
             invulnerable_default: invulnerable_timeout,
             invulnerable_timer: 0f64,
-            events: Vec::new(),
         }
     }
 
@@ -46,12 +56,13 @@ impl Damageable {
         self.health
     }
 
-    pub fn set_health(&mut self, new_health: u32, entity_id: ProcessUniqueId) -> u32 {
+    pub fn set_health(&mut self, new_health: u32, damager_entity_id: ProcessUniqueId, damaged_entity_id: ProcessUniqueId, events: &mut EventMap) -> u32 {
         if self.invulnerable_timer == 0f64 {
-            self.events.push(DamageEvent {
-                entity_id: entity_id,
+            println!("{:?} {:?}", new_health, self.health);
+            events.add(event::Event::new(DamageEvent {
+                entity_id: damager_entity_id,
                 amount: new_health as i32 - self.health as i32,
-            });
+            }, damaged_entity_id, None));
             if new_health < self.health {
                 self.invulnerable_timer = self.invulnerable_default;
             }
@@ -60,7 +71,13 @@ impl Damageable {
         self.health
     }
 
-    pub fn clear_events(&mut self) {
-        self.events.clear();
+    fn update(&mut self, event: &Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        let args = event.get_event_data::<update_event::UpdateEvent>().unwrap().args;
+        if self.invulnerable_timer > args.dt {
+            self.invulnerable_timer -= args.dt;
+        } else {
+            self.invulnerable_timer = 0f64;
+        }
+        DestroyType::None
     }
 }

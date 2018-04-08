@@ -1,4 +1,9 @@
 
+use component::DestroyType;
+use app::EventMap;
+use entity_states::EntityStates;
+use app::ButtonStates;
+use std::any::TypeId;
 use collidable::Collidable;
 use std::*;
 use player::Player;
@@ -16,6 +21,9 @@ use std::error::Error;
 use serde_json;
 use std::fs::File;
 use component_states::ComponentHashMap;
+use update_event;
+use event;
+use tiled::Map;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AnimationFrame {
@@ -87,7 +95,6 @@ impl Frame {
     }
 }
 
-#[derive(Clone)]
 pub struct AnimationState {
     pub sprite_name: String,
     pub animation_name: String,
@@ -106,13 +113,13 @@ impl Debug for AnimationState {
 type TranforGenerator = fn(&Entity, &Event, &RenderArgs, &Context, &[f64; 4]) -> [[f64; 3]; 2];
 
 impl AnimationState {
-    pub fn new(sprite_name: String, animation_name: String, transform_generator: Option<TranforGenerator>) -> AnimationState {
+    pub fn new(sprite_name: String, animation_name: String, transform_generator: Option<TranforGenerator>) -> Self {
         AnimationState {
             sprite_name: sprite_name,
             animation_name: animation_name,
             frame: 0usize,
             frame_time: 0f64,
-            transform_generator: transform_generator.unwrap_or(Self::get_draw_transform)
+            transform_generator: transform_generator.unwrap_or(Self::get_draw_transform),
         }
     }
 
@@ -182,5 +189,9 @@ impl Component for AnimationState {
             (self.transform_generator)(entity, event, args, context, &src_rect),
             gl,
         );
+    }
+
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        DestroyType::None
     }
 }

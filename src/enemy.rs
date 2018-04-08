@@ -1,5 +1,8 @@
 extern crate tiled;
 
+use damageable::DamageEvent;
+use app::EventMap;
+use std::any::TypeId;
 use component::DestroyType;
 use component::Component;
 use component_states::ComponentStates;
@@ -17,6 +20,8 @@ use snowflake::ProcessUniqueId;
 use nalgebra::{Vector2, Point2};
 use sprite::AnimationState;
 use component_states::ComponentHashMap;
+use update_event;
+use event;
 
 #[derive(Debug)]
 pub struct Enemy {
@@ -37,14 +42,13 @@ impl Enemy {
             Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
         ]));
         components.insert_component(AnimationState::new("enemy".to_string(), "stand".to_string(), None));
-        components.insert_component(Damageable::new(1u32, 0f64));
+        components.insert_component(Damageable::new(1u32, 1f64));
         components.insert_component(Enemy::new(player_id));
         Entity::new(components)
     }
-}
 
-impl Component for Enemy {
-    fn update(&mut self, entity: &mut Entity, args: &UpdateArgs, keys: &ButtonStates, entities: &mut EntityStates, map: &Map) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        let args = event.get_event_data::<update_event::UpdateEvent>().unwrap().args;
         if let Some(player) = entities.get_mut(&self.player_id) {
             if player.components.get_component::<Player>().is_some() {
                 if let Some(other_body) = player.components.get_mut_component::<Collidable>() {
@@ -57,13 +61,31 @@ impl Component for Enemy {
                 }
             }
         }
+
+        DestroyType::None
+    }
+
+    fn handle_damage(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        let damage_event = event.get_event_data::<DamageEvent>().unwrap();
+        println!("{:?}", damage_event.amount);
         if let Some(damage) = entity.components.get_mut_component::<Damageable>() {
             if damage.get_health() == 0u32 {
                 return DestroyType::Entity;
             }
-            damage.clear_events();
         }
 
         DestroyType::None
+    }
+}
+
+impl Component for Enemy {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+        if event_type == TypeId::of::<update_event::UpdateEvent>() {
+            return self.update(event, entity, keys, entities, map, events)
+        } if event_type == TypeId::of::<DamageEvent>() {
+            self.handle_damage(event, entity, keys, entities, map, events)
+        } else {
+            DestroyType::None
+        }
     }
 }
