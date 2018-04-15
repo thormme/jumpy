@@ -1,3 +1,7 @@
+use app::EventMap;
+use app::ButtonStates;
+use piston_window::UpdateArgs;
+use entity_states::EntityStates;
 use std::mem::transmute;
 use std::intrinsics::type_name;
 use std::any::Any;
@@ -8,6 +12,7 @@ use entity::Entity;
 use component::Component;
 use std::any::TypeId;
 use snowflake::ProcessUniqueId;
+use tiled::Map;
 
 #[derive(Debug)]
 pub struct Event {
@@ -45,4 +50,11 @@ impl Event {
 
 pub trait EventData : AsAny + Debug {
     fn get_priority(&self) -> u32;
+}
+
+pub struct EventArgs<'a> {
+    pub keys: &'a ButtonStates,
+    pub entities: &'a mut EntityStates,
+    pub map: &'a Map,
+    pub events: &'a mut EventMap
 }

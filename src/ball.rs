@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use event::EventArgs;
 use app::EventMap;
 use component::DestroyType;
 use component::Component;
@@ -47,7 +48,7 @@ impl Ball {
         Entity::new(components)
     }
 
-    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         let mut components = entity.components.get_muts();
         if let Some(body) = components.get_mut::<Collidable>() {
             body.speed -= self.prev_speed - body.speed;
@@ -61,7 +62,7 @@ impl Ball {
                 }
             }
 
-            entities.for_zone(body.pos, 1, |entity| {
+            args.entities.for_zone(body.pos, 1, |entity| {
                 if entity.components.get_component::<Player>().is_some() {
                     /*if let Some(body) = components.get_mut::<Collidable>() {
                         if body.is_colliding(&body) {
@@ -77,9 +78,9 @@ impl Ball {
 }
 
 impl Component for Ball {
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
-            self.update(event, entity, keys, entities, map, events)
+            self.update(event, entity, args)
         } else {
             DestroyType::None
         }

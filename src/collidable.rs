@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use event::EventArgs;
 use app::EventMap;
 use std::collections::HashMap;
 use std::any::TypeId;
@@ -27,9 +28,9 @@ pub struct Collidable {
 }
 
 impl Component for Collidable {
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
-            self.update(event, entity, keys, entities, map, events)
+            self.update(event, entity, args)
         } else {
             DestroyType::None
         }
@@ -64,10 +65,10 @@ impl Collidable {
         }
     }
 
-    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         let prev_pos = self.prev_pos;
         self.pos += self.speed;
-        self.handle_collisions(map, &prev_pos);
+        self.handle_collisions(args.map, &prev_pos);
         self.prev_pos = self.pos;
         DestroyType::None
     }

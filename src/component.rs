@@ -1,4 +1,5 @@
 
+use event::EventArgs;
 use app::EventMap;
 use snowflake::ProcessUniqueId;
 use event::EventData;
@@ -24,7 +25,7 @@ pub enum DestroyType { Component, Entity, None}
 
 pub trait Component : AsAny + Debug {
     fn draw(&mut self, entity: &mut Entity, event: &Event, args: &RenderArgs, image: &Image, context: &Context, gl: &mut G2d, sprites: &HashMap<String, Sprite>) {}
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) ->  DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) ->  DestroyType {
         DestroyType::None
     }
 }

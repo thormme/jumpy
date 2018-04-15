@@ -4,6 +4,7 @@ extern crate graphics;
 extern crate std;
 extern crate snowflake;
 extern crate evmap;
+use event::EventArgs;
 use damageable::DamageEvent;
 use update_event;
 use std::any::TypeId;
@@ -254,7 +255,10 @@ impl App {
                     if let Some(mut entity) = entity_result {
                         let mut destroy = false;
                         for event in events {
-                            if entity.handle_event(event, args, keys, &mut self.entities, &map, &mut self.events) {
+                            if entity.handle_event(event, EventArgs {
+                                keys: keys, entities: &mut self.entities,
+                                map: &map, events: &mut self.events
+                            }) {
                                 destroy = true;
                                 break;
                             }

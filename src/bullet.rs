@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use event::EventArgs;
 use app::EventMap;
 use std::any::TypeId;
 use component::DestroyType;
@@ -46,11 +47,12 @@ impl Bullet {
         Entity::new(components)
     }
 
-    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         let mut destroy = DestroyType::None;
         let entity_id = entity.get_id();
         if let Some(body) = entity.components.get_mut_component::<Collidable>() {
-            entities.for_zone(body.pos, 1, |colliding_entity| {
+            let events = &mut args.events;
+            args.entities.for_zone(body.pos, 1, |colliding_entity| {
                 let mut colliding = false;
                 if let Some(other_body) = colliding_entity.components.get_component::<Collidable>() {
                     if other_body.is_colliding(&body) {
@@ -60,8 +62,7 @@ impl Bullet {
                 if colliding {
                     let colliding_id = colliding_entity.get_id();
                     if let Some(damageable) = colliding_entity.components.get_mut_component::<Damageable>() {
-                        let new_health = damageable.get_health() - 1u32;
-                        damageable.set_health(new_health, entity_id, colliding_id, events);
+                        damageable.change_health(-1i32, entity_id, colliding_id, events);
                         destroy = DestroyType::Entity;
                     }
                 }
@@ -85,9 +86,9 @@ impl Component for Bullet {
         }
     }
 
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
-            self.update(event, entity, keys, entities, map, events)
+            self.update(event, entity, args)
         } else {
             DestroyType::None
         }

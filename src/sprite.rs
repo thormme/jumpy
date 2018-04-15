@@ -1,4 +1,5 @@
 
+use event::EventArgs;
 use component::DestroyType;
 use app::EventMap;
 use entity_states::EntityStates;
@@ -191,7 +192,7 @@ impl Component for AnimationState {
         );
     }
 
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         DestroyType::None
     }
 }

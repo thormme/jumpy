@@ -1,6 +1,7 @@
 extern crate tiled;
 extern crate nalgebra;
 
+use event::EventArgs;
 use app::EventMap;
 use component::DestroyType;
 use std::any::TypeId;
@@ -73,21 +74,21 @@ impl Player {
         }
     }
 
-    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         let mut animation = "stand".to_string();
         if let Some(body) = entity.components.get_mut_component::<Collidable>() {
             body.speed.y += 0.5f32;
             body.speed.x *= 0.8f32;
-            if keys.get_button_down(&Button::Keyboard(Key::Right)) {
+            if args.keys.get_button_down(&Button::Keyboard(Key::Right)) {
                 animation = "run".to_string();
                 body.speed.x += 1f32;
                 self.facing = FacingDirection::Right;
-            } else if keys.get_button_down(&Button::Keyboard(Key::Left)) {
+            } else if args.keys.get_button_down(&Button::Keyboard(Key::Left)) {
                 animation = "run".to_string();
                 body.speed.x -= 1f32;
                 self.facing = FacingDirection::Left;
             }
-            if keys.get_button_down(&Button::Keyboard(Key::Up)) {
+            if args.keys.get_button_down(&Button::Keyboard(Key::Up)) {
                 if body.grounded {
                     body.speed.y = -10f32;
                     self.jumping = true;
@@ -98,10 +99,10 @@ impl Player {
                     body.speed.y = -2.5f32;
                 }
             }
-            if keys.get_button_down(&Button::Keyboard(Key::X)) {
+            if args.keys.get_button_down(&Button::Keyboard(Key::X)) {
                 let x_speed = match self.facing { FacingDirection::Left => -8f32, FacingDirection::Right => 8f32 };
                 let bullet = Bullet::new_entity(body.pos.x, body.pos.y, x_speed, 0f32);
-                entities.insert(bullet.get_id(), Box::new(bullet));
+                args.entities.insert(bullet.get_id(), Box::new(bullet));
             }
             if body.speed.x > 3f32 {
                 body.speed.x = 3f32;
@@ -115,7 +116,7 @@ impl Player {
             animation_state.set_animation(animation);
         }
 
-        entities.for_each(|entity| {
+        args.entities.for_each(|entity| {
             if let Some(_player) = entity.components.get_component::<Player>() {
                 println!("{:?}", entity);
             }
@@ -126,9 +127,9 @@ impl Player {
 }
 
 impl Component for Player {
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
-            self.update(event, entity, keys, entities, map, events)
+            self.update(event, entity, args)
         } else {
             DestroyType::None
         }

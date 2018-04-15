@@ -32,6 +32,7 @@ mod component;
 mod component_states;
 mod event;
 mod update_event;
+//mod components;
 
 extern crate sdl2_window;
 

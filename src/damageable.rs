@@ -1,3 +1,4 @@
+use event::EventArgs;
 use event::EventData;
 use event::Event;
 use app::{EventMap, EventState};
@@ -34,9 +35,9 @@ impl EventData for DamageEvent {
 }
 
 impl Component for Damageable {
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
-            self.update(event, entity, keys, entities, map, events)
+            self.update(event, entity, args)
         } else {
             DestroyType::None
         }
@@ -56,6 +57,21 @@ impl Damageable {
         self.health
     }
 
+    pub fn change_health(&mut self, amount: i32, damager_entity_id: ProcessUniqueId, damaged_entity_id: ProcessUniqueId, events: &mut EventMap) -> u32 {
+        if self.health as i32 >= -amount {
+            let new_health = (self.health as i32 + amount) as u32;
+            self.set_health(new_health, damager_entity_id, damaged_entity_id, events)
+        } else {
+            if amount < 0 {
+                events.add(event::Event::new(DamageEvent {
+                    entity_id: damager_entity_id,
+                    amount,
+                }, damaged_entity_id, None));
+            }
+            0u32
+        }
+    }
+
     pub fn set_health(&mut self, new_health: u32, damager_entity_id: ProcessUniqueId, damaged_entity_id: ProcessUniqueId, events: &mut EventMap) -> u32 {
         if self.invulnerable_timer == 0f64 {
             println!("{:?} {:?}", new_health, self.health);
@@ -71,10 +87,10 @@ impl Damageable {
         self.health
     }
 
-    fn update(&mut self, event: &Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
-        let args = event.get_event_data::<update_event::UpdateEvent>().unwrap().args;
-        if self.invulnerable_timer > args.dt {
-            self.invulnerable_timer -= args.dt;
+    fn update(&mut self, event: &Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
+        let update_args = event.get_event_data::<update_event::UpdateEvent>().unwrap().args;
+        if self.invulnerable_timer > update_args.dt {
+            self.invulnerable_timer -= update_args.dt;
         } else {
             self.invulnerable_timer = 0f64;
         }

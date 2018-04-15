@@ -1,5 +1,6 @@
 extern crate tiled;
 
+use event::EventArgs;
 use damageable::DamageEvent;
 use app::EventMap;
 use std::any::TypeId;
@@ -47,16 +48,16 @@ impl Enemy {
         Entity::new(components)
     }
 
-    fn update(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
-        let args = event.get_event_data::<update_event::UpdateEvent>().unwrap().args;
-        if let Some(player) = entities.get_mut(&self.player_id) {
+    fn update(&mut self, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
+        let update_args = event.get_event_data::<update_event::UpdateEvent>().unwrap().args;
+        if let Some(player) = args.entities.get_mut(&self.player_id) {
             if player.components.get_component::<Player>().is_some() {
                 if let Some(other_body) = player.components.get_mut_component::<Collidable>() {
                     if let Some(body) = entity.components.get_mut_component::<Collidable>() {
                         let pos = other_body.pos;
                         let direction = (pos.y-body.pos.y).atan2(pos.x-body.pos.x);
-                        body.pos.x += direction.cos()*10f32 * args.dt as f32;
-                        body.pos.y += direction.sin()*10f32 * args.dt as f32;
+                        body.pos.x += direction.cos()*10f32 * update_args.dt as f32;
+                        body.pos.y += direction.sin()*10f32 * update_args.dt as f32;
                     }
                 }
             }
@@ -65,7 +66,7 @@ impl Enemy {
         DestroyType::None
     }
 
-    fn handle_damage(&mut self, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_damage(&mut self, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         let damage_event = event.get_event_data::<DamageEvent>().unwrap();
         println!("{:?}", damage_event.amount);
         if let Some(damage) = entity.components.get_mut_component::<Damageable>() {
@@ -79,11 +80,11 @@ impl Enemy {
 }
 
 impl Component for Enemy {
-    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
+    fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, args: &mut EventArgs) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
-            return self.update(event, entity, keys, entities, map, events)
+            return self.update(event, entity, args)
         } else if event_type == TypeId::of::<DamageEvent>() {
-            self.handle_damage(event, entity, keys, entities, map, events)
+            self.handle_damage(event, entity, args)
         } else {
             DestroyType::None
         }
