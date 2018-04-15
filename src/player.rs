@@ -98,9 +98,6 @@ impl Player {
                     body.speed.y = -2.5f32;
                 }
             }
-            if keys.get_button_down(&Button::Keyboard(Key::Down)) {
-                body.pos.y += 1f32;
-            }
             if keys.get_button_down(&Button::Keyboard(Key::X)) {
                 let x_speed = match self.facing { FacingDirection::Left => -8f32, FacingDirection::Right => 8f32 };
                 let bullet = Bullet::new_entity(body.pos.x, body.pos.y, x_speed, 0f32);

@@ -60,7 +60,8 @@ impl Bullet {
                 if colliding {
                     let colliding_id = colliding_entity.get_id();
                     if let Some(damageable) = colliding_entity.components.get_mut_component::<Damageable>() {
-                        damageable.set_health(0, entity_id, colliding_id, events);
+                        let new_health = damageable.get_health() - 1u32;
+                        damageable.set_health(new_health, entity_id, colliding_id, events);
                         destroy = DestroyType::Entity;
                     }
                 }

@@ -31,7 +31,7 @@ pub struct Enemy {
 impl Enemy {
     pub fn new(player_id: ProcessUniqueId) -> Enemy {
         Enemy {
-            player_id: player_id,
+            player_id,
         }
     }
 
@@ -42,7 +42,7 @@ impl Enemy {
             Point2::new(32f32, 32f32), Point2::new(32f32, 0f32)
         ]));
         components.insert_component(AnimationState::new("enemy".to_string(), "stand".to_string(), None));
-        components.insert_component(Damageable::new(1u32, 1f64));
+        components.insert_component(Damageable::new(4u32, 0f64));
         components.insert_component(Enemy::new(player_id));
         Entity::new(components)
     }
@@ -82,7 +82,7 @@ impl Component for Enemy {
     fn handle_event(&mut self, event_type: TypeId, event: &event::Event, entity: &mut Entity, keys: &ButtonStates, entities: &mut EntityStates, map: &Map, events: &mut EventMap) -> DestroyType {
         if event_type == TypeId::of::<update_event::UpdateEvent>() {
             return self.update(event, entity, keys, entities, map, events)
-        } if event_type == TypeId::of::<DamageEvent>() {
+        } else if event_type == TypeId::of::<DamageEvent>() {
             self.handle_damage(event, entity, keys, entities, map, events)
         } else {
             DestroyType::None
